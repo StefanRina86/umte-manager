@@ -1,0 +1,2 @@
+/* Perimetro della prima versione. I dati delle funzioni rinviate restano archiviati. */
+(function(root){'use strict';const hidden=new Set(['viewDossiers','viewMaterials']);const config={version:'0.12.0',enabled:true,shared:true,blockedPermission:p=>hidden.has(p),activeViews:['dashboard','shifts','competencies','people','personnelEvents','activities','reports','requests','administration']};if(typeof module==='object'&&module.exports)module.exports=config;else{root.UMTEEssential=config;root.UMTE_ESSENTIAL=true;}})(typeof window!=='undefined'?window:globalThis);
