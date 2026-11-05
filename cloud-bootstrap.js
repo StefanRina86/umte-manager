@@ -1,6 +1,8 @@
 (async()=>{
 'use strict';
-const config=window.UMTE_CLOUD_CONFIG,cloud=window.supabase.createClient(config.url,config.key,{auth:{storageKey:'umte-manager-auth',persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}}),nativeFetch=window.fetch.bind(window);
+const config=window.UMTE_CLOUD_CONFIG;
+if(!window.supabase?.createClient||!config?.url||!config?.key){document.getElementById('status').textContent='Modulo di autenticazione non caricato. Aggiorna la pagina; se il problema continua, segnala il blocco della connessione.';document.getElementById('enter').disabled=true;return;}
+const cloud=window.supabase.createClient(config.url,config.key,{auth:{storageKey:'umte-manager-auth',persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}}),nativeFetch=window.fetch.bind(window);
 const status=document.getElementById('status'),form=document.getElementById('login'),exit=document.getElementById('exit');
 async function api(body){const {data,error}=await cloud.auth.getSession();if(error||!data.session)throw Error('Accedi con email e password.');return nativeFetch(config.url+'/functions/v1/umte-manager-api',{method:'POST',headers:{'Content-Type':'application/json',apikey:config.key,Authorization:'Bearer '+data.session.access_token},body:JSON.stringify(body)});}
 window.UMTECloudLogout=async()=>{await cloud.auth.signOut({scope:'local'});localStorage.removeItem('umte-manager-v01');location.href='./';};
