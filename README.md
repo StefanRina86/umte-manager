@@ -1,38 +1,28 @@
 # UMTE Manager · UM TE1 Gallarate
 
-Repository GitHub Pages del gestionale UMTE Manager. Condivide **il progetto Supabase e gli account di autenticazione** con gli applicativi RA e Sezionatori, ma **non deve condividere le rispettive tabelle applicative**.
+Repository GitHub Pages del gestionale UMTE Manager. Condivide progetto Supabase e account di autenticazione con RA e Sezionatori; conserva tabelle applicative separate.
 
-## Stato reale (05/11/2026)
+## Stato (05/11/2026)
+- Il sito contiene **solo la pagina provvisoria di accesso**; NON la versione completa v0.10.6.
+- Supabase ha ricevuto la **prima** tabella semplificata `umte_manager_members` tramite `supabase/01_accessi_manager.sql`.
+- Per preparare il backend della versione completa eseguire **una sola volta** `supabase/02_upgrade_complete.sql` nel SQL Editor, **dopo un backup**. Questo script è compatibile con la tabella già creata.
+- La funzione Edge `umte-manager-api` deve ancora essere distribuita e testata.
+- Il pacchetto sorgente completo della v0.10.6 è stato recuperato, ma **non è ancora pubblico**: include riferimenti aziendali e personali da separare prima della pubblicazione.
+- Non inserire presenze, nominativi, ferie, contatti o altri dati operativi nel repository pubblico.
 
-- ✅ Repository creato e collegato alla configurazione pubblicabile Supabase già utilizzata da RA.
-- ✅ Pagina di accesso predisposta per PC e smartphone, senza registrazione libera.
-- ✅ Script SQL per autorizzazioni specifiche di UMTE Manager, separate da RA e Sezionatori.
-- ⏳ La **versione completa v0.10.6 non è ancora migrata**. La pagina `index.html` attuale serve solo a verificare la pubblicazione e le credenziali, non è il gestionale operativo.
-- ⏳ Pubblicazione GitHub Pages e applicazione dello script SQL da completare.
+## GitHub Pages
+Settings → Pages → Deploy from a branch → main → /(root).
 
-## Pubblicazione (una sola volta)
+Indirizzo previsto: https://stefanrina86.github.io/umte-manager/ (solo dopo l'esito riuscito del deploy). L'effettiva disponibilità del sito va verificata dal browser.
 
-1. Su GitHub aprire **Settings → Pages** di questo repository.
-2. In **Build and deployment** scegliere **Deploy from a branch**.
-3. Selezionare branch **main**, directory **/(root)**, poi **Save**.
-4. Il sito sarà all'indirizzo `https://stefanrina86.github.io/umte-manager/` (dopo la pubblicazione).
-5. Nel progetto Supabase già in uso per RA e Sezionatori, aprire **SQL Editor** ed eseguire `supabase/01_accessi_manager.sql`.
-6. Da Supabase **Authentication → Users**, individuare gli UUID degli utenti già esistenti. Abilitare **solo** i soggetti autorizzati nella tabella `public.umte_manager_members`, assegnando ruolo e nucleo. Non inserire gli UUID o gli indirizzi email degli utenti in GitHub.
-7. Verificare l'accesso con un account autorizzato e uno non autorizzato. I dati della versione v0.10.6 **non** sono ancora caricati.
+## Supabase, aggiornamento database
+1. Fare un backup del progetto esistente.
+2. Aprire SQL Editor nel progetto che usano già RA e Sezionatori.
+3. Eseguire `supabase/02_upgrade_complete.sql`, che estende in modo compatibile la tabella di accesso, attiva i permessi server e crea stato, backup, audit.
+4. Gli account non vengono autorizzati automaticamente: individuare l'UUID esatto del responsabile in Authentication → Users.
+5. Abilitare esplicitamente l'UUID del responsabile come `owner` tramite SQL, poi distribuire e testare la funzione dedicata.
+6. Solo dopo test su Supabase si potrà distribuire il frontend v0.10.6 e importare l'archivio con backup privato.
 
-## Separazione e sicurezza
+**Non distribuire il pacchetto privato di baseline su GitHub**, nemmeno nella cartella docs.
 
-- Il file `config.js` contiene solo URL e **chiave publishable** per il client. **Mai** pubblicare la chiave `service_role`, i token amministrativi, le password o i file riservati.
-- Un repository pubblico non è un archivio di presenze, ferie, verbali, nominativi, telefoni, abilitazioni o documenti aziendali.
-- Prima di distribuire l'app completa servono autorizzazioni RLS a livello di record, storico modifiche, sincronizzazione tra utenti e collaudo PC/mobile.
-- Lo script attuale crea **solo l'anagrafica di autorizzazione**. Non è un database completo dei moduli gestionali.
-- La versione ChatGPT v0.10.6 e questa infrastruttura sono due applicazioni distinte finché non viene trasferito il codice sorgente completo. Non copiarne automaticamente i dati in repository.
-
-## File
-
-- `index.html`: pagina di accesso/stato migrazione
-- `config.js`: configurazione client Supabase (chiave pubblicabile)
-- `supabase/01_accessi_manager.sql`: abilitazioni autonome UMTE Manager
-- `.nojekyll`: pubblicazione statica GitHub Pages
-
-Prossimo passo tecnico: recuperare l'**export sorgente completo della v0.10.6**, controllare che non incorpori dati riservati e solo allora integrare le funzioni gestionali nel sito.
+La pagina provvisoria attuale usa lo schema di test. Dopo l'upgrade completo del database, il login non sarà utilizzabile finché la nuova interfaccia e la funzione Edge non saranno installate.
