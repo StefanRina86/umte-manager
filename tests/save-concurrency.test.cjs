@@ -90,3 +90,60 @@ test('authorization failures are not retried',async()=>{
  }),/Forbidden/);
  assert.equal(attempts,1);
 });
+
+test('10 simultaneous distinct rapportini in the same array are all preserved',async()=>{
+ const initial={activityDiary:Array.from({length:10},(_,i)=>({id:'REPORT-'+i,activityId:'ACT-'+i,notes:'original'}))};
+ const s=backend();const first=s.snapshot();
+ // Initialize fixture through the public save contract.
+ await s.save({revision:first.revision,patch:initial});
+ const base=s.snapshot();
+ const changes=Array.from({length:10},(_,i)=>({activityDiary:base.data.activityDiary.map(r=>r.id==='REPORT-'+i?{...r,notes:'edited-'+i}:r)}));
+ const results=await Promise.all(changes.map(patch=>saveWithSafeRetry({save:s.save,load:s.load,revision:base.revision,baseline:base.data,patch,maxAttempts:15})));
+ assert.equal(results.length,10);
+ assert.equal(s.snapshot().data.activityDiary.length,10);
+ for(let i=0;i<10;i++)assert.equal(s.snapshot().data.activityDiary.find(r=>r.id==='REPORT-'+i).notes,'edited-'+i);
+});
+test('overlapping edits to one rapportino fail closed',async()=>{
+ const old={activityDiary:[{id:'REPORT-1',notes:'old'}]};
+ const result=globalThis.UMTEConflict.reconcile({
+  baseline:old,
+  remote:{activityDiary:[{id:'REPORT-1',notes:'other user'}]},
+  patch:{activityDiary:[{id:'REPORT-1',notes:'our user'}]}
+ });
+ assert.equal(result.safe,false);
+ assert.equal(result.conflicting.length,1);
+});
+test('a new report from another user is preserved during disjoint edit',()=>{
+ const result=globalThis.UMTEConflict.reconcile({
+  baseline:{activityDiary:[{id:'A',notes:'old'}]},
+  remote:{activityDiary:[{id:'A',notes:'old'},{id:'B',notes:'new'}]},
+  patch:{activityDiary:[{id:'A',notes:'ours'}]}
+ });
+ assert.equal(result.safe,true);
+ assert.equal(result.patch.activityDiary.length,2);
+ assert.equal(result.patch.activityDiary.find(r=>r.id==='B').notes,'new');
+});
+test('deletion does not remove a concurrently modified report',()=>{
+ const result=globalThis.UMTEConflict.reconcile({
+  baseline:{activityDiary:[{id:'A',notes:'old'}]},
+  remote:{activityDiary:[{id:'A',notes:'new'}]},
+  patch:{activityDiary:[]}
+ });
+ assert.equal(result.safe,false);
+});
+test('ambiguous duplicate identifiers fail closed',()=>{
+ const result=globalThis.UMTEConflict.reconcile({
+  baseline:{activityDiary:[{id:'A',notes:'old'}]},
+  remote:{activityDiary:[{id:'A',notes:'other'}]},
+  patch:{activityDiary:[{id:'A',notes:'first'},{id:'A',notes:'second'}]}
+ });
+ assert.equal(result.safe,false);
+});
+test('turn variations without stable IDs do not merge independently',()=>{
+ const result=globalThis.UMTEConflict.reconcile({
+  baseline:{variations:[{personId:'1',date:'2026-11-08',shift:'M'}]},
+  remote:{variations:[{personId:'1',date:'2026-11-08',shift:'P'}]},
+  patch:{variations:[{personId:'1',date:'2026-11-08',shift:'N'}]}
+ });
+ assert.equal(result.safe,false);
+});
