@@ -29,7 +29,7 @@ async function open(){
  if(new URLSearchParams(location.search).has('accessi'))return accessManager(payload);
  window.UMTE_SHARED=payload;window.UMTE_BASELINE=payload.baseline;delete payload.baseline;
  const response=await nativeFetch('app.html',{cache:'no-store'});if(!response.ok)throw Error('Applicazione non disponibile.');
- const html=(await response.text()).replace('<head>','<head><script src="cloud-runtime.js"></script>');
+ const html=(await response.text()).replace('<head>','<head><script src="cloud-runtime.js"></script><link rel="stylesheet" href="mobile-improvements.css?v=20261108">');
  document.open();document.write(html);document.close();
 }
 form.onsubmit=async e=>{e.preventDefault();const button=document.getElementById('enter');button.disabled=true;status.textContent='Accesso in corso…';try{const {error}=await cloud.auth.signInWithPassword({email:document.getElementById('email').value.trim(),password:document.getElementById('password').value});if(error)throw Error('Email o password non valide.');document.getElementById('password').value='';await open();}catch(e){report(e);}finally{button.disabled=false;}};
