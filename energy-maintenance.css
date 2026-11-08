@@ -1,0 +1,14 @@
+.umte-energy-maintenance{background:#fff;border:1px solid #cadce4;border-radius:13px;margin:0 0 18px;padding:15px;box-shadow:0 7px 22px #10344a09}
+.umte-energy-maintenance summary{font-weight:800;color:#143f52;cursor:pointer;line-height:1.4;min-height:42px;display:flex;align-items:center}
+.umte-energy-maintenance p{font-size:.86rem;color:#516c78;line-height:1.6}
+.umte-energy-form{display:grid;gap:12px;padding-top:14px}
+.umte-energy-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.umte-energy-fields label,.umte-energy-form>label{display:grid;gap:7px;font-weight:700;font-size:.78rem}
+.umte-energy-form input,.umte-energy-form select,.umte-energy-form textarea{width:100%;padding:11px;border:1px solid #bad0da;border-radius:8px;font:inherit}
+.umte-energy-roster{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;max-height:280px;overflow:auto;border:1px solid #dae5e9;border-radius:9px;padding:8px}
+.umte-energy-roster label{display:flex;gap:10px;align-items:center;padding:9px 8px;background:#f4f8fa;border-radius:7px;font-size:.83rem;cursor:pointer}
+.umte-energy-roster input{width:19px;height:19px;flex:0 0 auto}
+.umte-energy-actions{display:flex;gap:8px;flex-wrap:wrap}
+.umte-energy-actions button{border:1px solid #c5d6dd;border-radius:8px;background:#f0f6f8;color:#153b50;padding:10px}
+.umte-energy-form>button[type=submit]{width:max-content;max-width:100%;min-height:44px}
+@media(max-width:760px){.umte-energy-fields,.umte-energy-roster{grid-template-columns:minmax(0,1fr)}.umte-energy-form>button[type=submit]{width:100%}}
