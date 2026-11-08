@@ -1,0 +1,60 @@
+/* UMTE Manager: miglioramenti mobile, senza modificare dati e permessi. */
+@media (max-width: 800px) {
+  html,body { width:100%; max-width:100%; overflow-x:hidden; -webkit-text-size-adjust:100%; }
+  body { font-size:15px; }
+  .app-shell { display:block!important; width:100%; min-width:0; }
+  .app-shell > main,main { min-width:0!important; max-width:100%; width:100%; overflow-x:clip; }
+  .sidebar { height:100dvh!important; width:min(86vw,306px)!important; max-width:306px; overflow-y:auto; overscroll-behavior:contain; z-index:90!important; }
+  .menu-toggle { display:inline-flex!important; align-items:center; justify-content:center; min-width:44px; min-height:44px; }
+  .topbar { position:sticky; top:0; z-index:40; min-height:60px; padding:8px 12px!important; box-shadow:0 2px 12px #0d2b3914; }
+  .topbar .eyebrow { font-size:10px; }
+  .topbar strong { font-size:12px; line-height:1.2; }
+  .user-chip { flex-shrink:0; max-width:120px; }
+  .user-chip strong { display:block; max-width:105px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .view { max-width:100%!important; width:100%; padding:15px 12px 36px!important; margin:0; }
+  .page-heading,.activity-heading { display:flex; gap:10px; flex-direction:column; align-items:stretch; margin-bottom:14px; }
+  .page-heading h1 { font-size:clamp(1.35rem,5.2vw,1.8rem); line-height:1.13; }
+  .page-heading .heading-actions,.page-heading > button { width:100%; }
+  .toolbar,.activity-toolbar,.report-toolbar,.training-toolbar { display:flex!important; flex-direction:column!important; align-items:stretch!important; gap:10px!important; width:100%; padding:12px!important; }
+  .toolbar label,.activity-toolbar label,.training-toolbar label { min-width:0!important; max-width:100%; width:100%; }
+  .toolbar input,.toolbar select,.activity-toolbar input,.activity-toolbar select,
+  .training-toolbar input,.training-toolbar select { max-width:100%!important; width:100%!important; min-height:44px; }
+  input,select,textarea { font-size:16px!important; }
+  button,[role=button] { touch-action:manipulation; }
+  .button,.detail-button,.nav-item { min-height:42px; }
+  .metric-grid,.dashboard-grid,.activity-summary,.people-event-summary,.dossier-summary,
+  .coverage-grid,.essential-home-actions,.grid-2,.form-grid,.day-actions { display:grid!important; grid-template-columns:minmax(0,1fr)!important; gap:11px!important; }
+  .span-2,.span-3,.deadline-panel { grid-column:auto!important; }
+  .panel,.card,.activity-card,.dossier-gantt-panel { max-width:100%!important; min-width:0!important; }
+  .table-scroll,#shifts .table-scroll,#monthly .table-scroll,.training-scroll,.safety-scroll {
+    display:block; max-width:100%; overflow-x:auto!important; overflow-y:auto;
+    -webkit-overflow-scrolling:touch; overscroll-behavior-x:contain; border-radius:10px;
+  }
+  #shifts .table-scroll,#monthly .table-scroll { max-height:62dvh; }
+  .shift-table { min-width:950px!important; }
+  .shift-table td,.shift-table th { min-width:70px; }
+  .shift-table thead th:first-child,.shift-table tbody td:first-child {
+    position:sticky!important; left:0!important; z-index:5; box-shadow:2px 0 5px #14344320;
+  }
+  .shift-table thead th:first-child { z-index:8; }
+  .monthly-table { min-width:1000px!important; }
+  .activity-board { display:flex!important; gap:12px; overflow-x:auto; scroll-snap-type:x proximity;
+    scroll-padding-inline:10px; -webkit-overflow-scrolling:touch; padding:5px 4px 20px; }
+  .activity-board > * { min-width:min(84vw,330px)!important; max-width:min(84vw,330px)!important;
+    flex:0 0 min(84vw,330px)!important; scroll-snap-align:start; }
+  .activity-board .day-card,.activity-board .activity-day { min-width:0!important; }
+  dialog.modal,dialog { box-sizing:border-box; width:calc(100vw - 12px)!important; max-width:calc(100vw - 12px)!important;
+    max-height:94dvh!important; overflow-y:auto; padding:16px!important; margin:auto!important; }
+  .modal-head { gap:8px; align-items:flex-start; }
+  .modal-head h2 { font-size:1.18rem; overflow-wrap:anywhere; }
+  .table-actions { gap:5px; flex-wrap:wrap; }
+  .rapport-competence-fieldset { max-width:100%; overflow-x:auto; }
+  .rapport-competence-row { min-width:660px; }
+  #reportHistoryBody button,#peopleBody button { min-height:39px; }
+  .status, .notice, .training-help { overflow-wrap:anywhere; }
+}
+@media (max-width: 390px) {
+  .topbar { padding:7px 8px!important; }
+  .user-chip { max-width:90px; }
+  .user-chip strong { max-width:76px; }
+}
