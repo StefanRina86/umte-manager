@@ -26,3 +26,15 @@ Indirizzo previsto: https://stefanrina86.github.io/umte-manager/ (solo dopo l'es
 **Non distribuire il pacchetto privato di baseline su GitHub**, nemmeno nella cartella docs.
 
 La pagina provvisoria attuale usa lo schema di test. Dopo l'upgrade completo del database, il login non sarà utilizzabile finché la nuova interfaccia e la funzione Edge non saranno installate.
+
+## Aggiornamento codice 8 novembre 2026 (backend da completare)
+
+La visualizzazione mobile è già stata aggiornata sul sito con schede giornaliere, filtri adattivi, tabelle scorrevoli e modali adatte agli smartphone. Sono presenti nel repository anche i componenti pronti per:
+- mantenimento unico per tutte le abilitazioni Energia `MI.EN.*` dei singoli partecipanti, escludendo `MI.OPC.*`;
+- vista personali turni e attività limitata a nucleo/squadra;
+- modifica rapportini da parte del compilatore, CUM, Specialisti e amministrativi;
+- aggiornamento dei cataloghi di formazione senza duplicare il mantenimento per ogni abilitazione.
+
+**Attenzione: questi tre ultimi punti sono sospesi finché non viene distribuito l'aggiornamento della funzione Supabase `umte-manager-api`.** Il frontend attiva tali funzioni soltanto quando il server restituisce gli appositi flag di capacità. Non aggiornare le scadenze reali prima del collaudo.
+
+Il database attuale non richiede un nuovo import di anagrafiche o turni. Conservare il backup prima di modificare la funzione Edge. Mai pubblicare su GitHub i file di archivio JSON o dati del personale.
