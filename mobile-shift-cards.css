@@ -1,0 +1,18 @@
+.umte-mobile-shift-cards,.umte-mobile-view-toggle{display:none}
+@media(max-width:760px){
+ #shifts:not([data-mobile-table="yes"]) .table-scroll:has(.shift-table){display:none!important}
+ #shifts[data-mobile-table="yes"] .umte-mobile-shift-cards{display:none!important}
+ .umte-mobile-shift-cards{display:grid;gap:12px;max-width:100%}
+ .umte-mobile-view-toggle{display:block;width:100%;padding:12px;margin:10px 0;background:#eaf4f5;color:#113b4b;border:1px solid #bdd6dd;border-radius:9px;font-weight:750;min-height:44px}
+ .umte-mobile-shift-card{background:white;border:1px solid #d2e2e8;border-radius:14px;padding:12px;box-shadow:0 7px 18px #102f3a0a}
+ .umte-mobile-shift-card header{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:12px}
+ .umte-mobile-shift-card header strong{font-size:.98rem;color:#102f40}
+ .umte-mobile-shift-card header small{color:#657e88;text-align:right;max-width:45%}
+ .umte-mobile-days{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .umte-mobile-day{display:grid;grid-template-columns:1fr auto;align-items:center;gap:4px;padding:10px;background:#eff5f7;border:1px solid #dbe8ed;border-radius:10px;text-align:left;min-height:64px}
+ .umte-mobile-day>span{color:#556f7c;font-size:.78rem;font-weight:650}
+ .umte-mobile-day>strong{font-size:1rem;background:#0f3548;color:#fff;padding:4px 8px;border-radius:7px}
+ .umte-mobile-day>small{grid-column:1/-1;color:#657e88;font-size:.71rem}
+ .umte-mobile-day.changed{border-color:#e8adb4;background:#fff5f6}
+ .umte-mobile-day.changed>strong{background:#bd4251}
+}
