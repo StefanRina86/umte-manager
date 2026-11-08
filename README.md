@@ -1,5 +1,17 @@
 # UMTE Manager · UM TE1 Gallarate
 
+## Stato verificato al 08/11/2026
+
+- L'applicazione completa v0.12.0 è pubblicata come frontend GitHub Pages (il deploy reale e l'operatività di Supabase devono comunque essere verificati in una sessione autorizzata).
+- La gestione dei conflitti è conservativa: salvataggi simultanei su sezioni diverse e su rapportini diversi con ID univoco vengono riconciliati dopo rilettura del server; modifiche allo stesso record rimangono bloccate. Dopo una riconciliazione è obbligatorio aggiornare la pagina.
+- Test sintetici: 10 rapportini indipendenti salvati simultaneamente, sovrascrittura dello stesso rapportino bloccata. Test unitari in `tests/save-concurrency.test.cjs`.
+- Non è stata certificata una simultaneità reale di 10 utenti, né verificato il ripristino su Supabase live.
+- Il codice API sicuro rimane nel pacchetto **privato**, non in questo repository pubblico. Nessun archivio con nominativi o turni deve essere pubblicato.
+- Problemi aperti: [#1 conflitti su ulteriori moduli](https://github.com/StefanRina86/umte-manager/issues/1), [#2 sicurezza backend in produzione](https://github.com/StefanRina86/umte-manager/issues/2).
+
+La sezione storica del 05/11/2026 sotto descrive lo stato precedente alla prima pubblicazione; non è più lo stato attuale.
+
+
 Repository GitHub Pages del gestionale UMTE Manager. Condivide progetto Supabase e account di autenticazione con RA e Sezionatori; conserva tabelle applicative separate.
 
 ## Stato (05/11/2026)
