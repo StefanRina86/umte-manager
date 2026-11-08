@@ -1,0 +1,4 @@
+.umte-personal-summary{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:11px 18px;background:#e6f2ef;border-bottom:1px solid #cce3da}
+.umte-personal-summary strong{color:#164c48}.umte-personal-summary span{color:#486964;font-size:.82rem;margin-right:auto}
+.umte-personal-summary button{background:white;border:1px solid #afcfca;border-radius:9px;color:#1a4c4b;padding:9px 13px;min-height:42px;font-weight:700;cursor:pointer}
+@media(max-width:760px){.umte-personal-summary{padding:11px 12px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}.umte-personal-summary strong,.umte-personal-summary span{grid-column:1/-1}.umte-personal-summary button{padding:9px 5px}}
