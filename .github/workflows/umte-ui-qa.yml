@@ -1,0 +1,32 @@
+name: UMTE - verifica layout mobile e desktop
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'mobile-shift-cards.js'
+      - 'mobile-shift-cards.css'
+      - 'mobile-polish.css'
+      - 'tests/**'
+      - '.github/workflows/umte-ui-qa.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  visual-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright
+      - run: npx playwright install --with-deps chromium
+      - name: Test synthetic schedules at 375, 390, 430, 768 and 1440px
+        run: node --test tests/mobile-layout.test.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: umte-visual-qa-synthetic
+          path: ${{ runner.temp }}/umte-*.png
+          retention-days: 7
