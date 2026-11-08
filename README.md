@@ -1,3 +1,25 @@
+> **Stato attuale (8 novembre 2026):** il frontend di UMTE Manager è pubblicato su GitHub Pages e utilizza Supabase tramite la funzione Edge dedicata. Il progetto è in collaudo, **non certificato per l'uso generalizzato**. Il testo storico sottostante descrive anche le fasi precedenti della migrazione.
+
+### Salvataggi concorrenti (frontend)
+- `cloud-save-conflict.js`: recupero prudente dopo HTTP 409 con confronto a tre versioni e fusione dei **soli record dotati di ID univoco**.
+- Record distinti possono essere conservati nella stessa sezione; se due utenti modificano lo stesso ID, il secondo salvataggio è bloccato. Le variazioni turno senza ID non vengono fuse automaticamente.
+- Dopo un recupero il client richiede di aggiornare i dati prima di ulteriori modifiche.
+- **La funzione Edge live non è stata collaudata con 10 account distinti.** Non dichiarare completato un test soltanto perché ha superato una simulazione locale.
+
+### Controlli automatici
+- `tests/save-concurrency.test.cjs`: test di regressione su conflitti e modifiche indipendenti.
+- `tests/mobile-layout.test.cjs` e `tests/fixtures/mobile-shifts.html`: verifiche browser con dati sintetici su schermi 375/390/430/768/1440px.
+- `.github/workflows/umte-static-validation.yml` e `.github/workflows/umte-ui-qa.yml`: esecuzione automatica e screenshot di prova nell'artefatto CI.
+- I test visuali di staging e i controlli sul database reale richiedono un accesso autorizzato. Il workflow CI non certifica il sito autenticato.
+
+### Sicurezza e dati
+- Nessun backup, nominativo, presenza o dato RFI deve essere copiato sul repository pubblico o nei log di test.
+- La funzione Edge con controlli di autorizzazione riveduti va distribuita solo dopo backup completo e possibilità di rollback, quindi testata con account di prova.
+- Supabase ospita anche applicazioni separate RA e Sezionatori: evitare modifiche globali alle impostazioni di autenticazione.
+- Verificare l'autorizzazione aziendale al trattamento e all'hosting esterno prima dell'utilizzo reale.
+
+---
+
 # UMTE Manager · UM TE1 Gallarate
 
 ## Stato verificato al 08/11/2026
