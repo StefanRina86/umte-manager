@@ -14,13 +14,14 @@ La sezione storica del 05/11/2026 sotto descrive lo stato precedente alla prima 
 
 Repository GitHub Pages del gestionale UMTE Manager. Condivide progetto Supabase e account di autenticazione con RA e Sezionatori; conserva tabelle applicative separate.
 
-## Stato (05/11/2026)
-- Il sito contiene **solo la pagina provvisoria di accesso**; NON la versione completa v0.10.6.
-- Supabase ha ricevuto la **prima** tabella semplificata `umte_manager_members` tramite `supabase/01_accessi_manager.sql`.
-- Per preparare il backend della versione completa eseguire **una sola volta** `supabase/02_upgrade_complete.sql` nel SQL Editor, **dopo un backup**. Questo script è compatibile con la tabella già creata.
-- La funzione Edge `umte-manager-api` deve ancora essere distribuita e testata.
-- Il pacchetto sorgente completo della v0.10.6 è stato recuperato, ma **non è ancora pubblico**: include riferimenti aziendali e personali da separare prima della pubblicazione.
-- Non inserire presenze, nominativi, ferie, contatti o altri dati operativi nel repository pubblico.
+## Stato aggiornato (08/11/2026)
+- L'applicazione completa è pubblicata su GitHub Pages e l'archivio è stato inizializzato dall'utente su Supabase.
+- Le modifiche mobili sono pubblicate; non equivalgono ancora a una verifica visiva live su Safari/Chrome con accesso autenticato.
+- Concorrenza: retry conservativo delle revisioni, fusione per record **soltanto** per i rapportini e le segnalazioni indipendenti con ID; le altre sezioni bloccano i conflitti.
+- La suite di regressione sulla concorrenza contiene 10 casi, eseguiti in ambiente sintetico. Il collaudo multiutente live resta aperto.
+- È disponibile una revisione dell'API Edge verificata offline, ma il deploy e la configurazione effettiva del progetto Supabase devono essere verificati prima dell'uso generalizzato.
+- L'uso di servizi esterni per dati aziendali richiede l'autorizzazione aziendale.
+- **Mai pubblicare** backup JSON, presenze, nominativi, ferie, informazioni personali, token o chiavi amministrative nel repository pubblico.
 
 ## GitHub Pages
 Settings → Pages → Deploy from a branch → main → /(root).
