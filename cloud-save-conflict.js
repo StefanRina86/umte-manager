@@ -1,73 +1,80 @@
-/* Conservative revision conflict handling for UMTE Manager.
-   A 409 can be retried only if EVERY modified top-level section is unchanged remotely.
-   No automatic overwriting of a section concurrently edited by another user. */
+/* Conservative merge-on-conflict for UMTE Manager (no real-data requests).
+   On HTTP 409, replay ONLY edits to independent records by stable ID;
+   abort on same-record, ambiguous IDs, missing records, or unsafe structures. */
 (function(root){
 'use strict';
 const equal=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
-// Records with stable IDs and independent changes can be merged after a 409.
-// Keep this allow-list small: shifts, qualifications, approvals and other
-// cross-record workflows require explicit review before automatic merging.
-const mergeableKeys=new Set(['activityDiary','operationalRequests']);
-const byId=(list)=>{
- if(!Array.isArray(list))return null;
- const out=new Map();
- for(const item of list){
-  if(!item||typeof item!=='object'||typeof item.id!=='string'&&typeof item.id!=='number')return null;
-  const id=String(item.id);if(!id||out.has(id))return null;
-  out.set(id,item);
+const own=(o,k)=>Object.prototype.hasOwnProperty.call(o||{},k);
+const clone=v=>v===undefined?undefined:JSON.parse(JSON.stringify(v));
+function indexed(items){
+ if(!Array.isArray(items))return null;
+ const map=new Map();
+ for(const item of items){
+   if(!item||typeof item!=='object'||Array.isArray(item))return null;
+   const id=item.id;
+   if((typeof id!=='string'&&typeof id!=='number')||String(id).trim()==='')return null;
+   const key=String(id);
+   if(map.has(key))return null;
+   map.set(key,item);
  }
- return out;
-};
-function mergeRecords(base,remote,local){
- const b=byId(base),r=byId(remote),l=byId(local);
- if(!b||!r||!l)return null;
- const localChanged=new Set(),remoteChanged=new Set();
- for(const id of new Set([...b.keys(),...l.keys()]))if(!equal(b.get(id),l.get(id)))localChanged.add(id);
- for(const id of new Set([...b.keys(),...r.keys()]))if(!equal(b.get(id),r.get(id)))remoteChanged.add(id);
- if([...localChanged].some(id=>remoteChanged.has(id)))return null;
- const merged=new Map(r);
- for(const id of localChanged){
-  if(l.has(id))merged.set(id,l.get(id));
-  else merged.delete(id);
- }
- return [...merged.values()];
+ return map;
 }
-function reconcileSections({baseline,remote,patch}){
- const conflicting=[],resolved={};
- for(const [name,value] of Object.entries(patch||{})){
-  if(equal(baseline?.[name],remote?.[name])){resolved[name]=value;continue;}
-  if(mergeableKeys.has(name)){
-    const merged=mergeRecords(baseline?.[name]||[],remote?.[name]||[],value);
-    if(merged){resolved[name]=merged;continue;}
+function rebaseSection(baseline,local,remote){
+ if(equal(baseline,remote))return {safe:true,value:clone(local),recordMerged:false};
+ const b=indexed(baseline),l=indexed(local),r=indexed(remote);
+ if(!b||!l||!r)return {safe:false,reason:'Sezione senza identificativi univoci verificabili'};
+ // Pure reorders cannot be identified as independent record edits.
+ const bOrder=baseline.map(x=>String(x.id)),lOrder=local.filter(x=>b.has(String(x.id))).map(x=>String(x.id));
+ const unchangedOrder=bOrder.filter(id=>l.has(id));
+ if(!equal(lOrder,unchangedOrder))return {safe:false,reason:'Ordinamento modificato: verifica manuale necessaria'};
+ const ids=new Set([...b.keys(),...l.keys()]), touched=[];
+ for(const id of ids)if(!equal(b.get(id),l.get(id)))touched.push(id);
+ if(!touched.length)return {safe:false,reason:'Modifica non riconducibile a un record identificato'};
+ for(const id of touched)if(!equal(b.get(id),r.get(id)))return {safe:false,reason:'Record '+id+' modificato da un altro utente'};
+ const output=remote.filter(item=>!touched.includes(String(item.id))||l.has(String(item.id))).map(item=>
+  touched.includes(String(item.id))?clone(l.get(String(item.id))):clone(item)
+ );
+ for(const id of touched)if(!r.has(id)&&l.has(id))output.push(clone(l.get(id)));
+ return {safe:true,value:output,recordMerged:true};
+}
+function rebasePatch({baseline,remote,patch}){
+ if(!baseline||!remote||!patch||typeof patch!=='object')return {safe:false,conflicting:['Archivio non disponibile']};
+ const merged={},conflicting=[];
+ for(const [section,local] of Object.entries(patch)){
+  if(!own(baseline,section)||!own(remote,section)){
+   // New schema keys are not automatically merged across versions.
+   if(equal(baseline[section],remote[section]))merged[section]=clone(local);
+   else conflicting.push(section+': struttura modificata');
+   continue;
   }
-  conflicting.push(name);
+  const result=rebaseSection(baseline[section],local,remote[section]);
+  if(!result.safe)conflicting.push(section+': '+(result.reason||'dati modificati da altri'));
+  else merged[section]=result.value;
  }
- return {safe:conflicting.length===0,conflicting,patch:resolved};
+ return {safe:conflicting.length===0,conflicting,patch:merged};
 }
-function compareSections(args){
- const {safe,conflicting}=reconcileSections(args);
- return {safe,conflicting};
+function compareSections({baseline,remote,patch}){
+ const t=rebasePatch({baseline,remote,patch});
+ return {safe:t.safe,conflicting:t.conflicting};
 }
-async function saveWithSafeRetry({save,load,revision,baseline,patch,maxAttempts=16}){
+async function saveWithSafeRetry({save,load,revision,baseline,patch,maxAttempts=4}){
  if(typeof save!=='function'||typeof load!=='function')throw Error('Servizio di salvataggio non configurato.');
- let currentRevision=revision,remoteBaseline=baseline,collisions=0,currentPatch=patch;
+ let currentRevision=revision,priorBaseline=baseline,currentPatch=clone(patch),collisions=0;
  for(let attempt=0;attempt<maxAttempts;attempt++){
   const response=await save({revision:currentRevision,patch:currentPatch});
-  if(response.ok){
-   return {result:response.data,retried:collisions>0,remoteBaseline:collisions?remoteBaseline:null,collisions};
-  }
+  if(response.ok)return {result:response.data,retried:collisions>0,collisions};
   if(response.status!==409)throw Error(response.error||'Salvataggio non riuscito.');
-  if(attempt===maxAttempts-1)throw Error('Altre modifiche contemporanee in corso. Esporta le tue modifiche e riprova dopo aver aggiornato i dati.');
+  if(attempt===maxAttempts-1)throw Error('Troppe modifiche contemporanee. Esporta le tue modifiche e aggiorna.');
   const latest=await load();
-  if(!latest||!latest.data||latest.revision===undefined)throw Error('Impossibile rileggere la versione aggiornata dell’archivio. Nessun salvataggio eseguito.');
-  const test=reconcileSections({baseline:remoteBaseline,remote:latest.data,patch:currentPatch});
-  if(!test.safe)throw Error('Conflitto sui dati modificati ('+test.conflicting.join(', ')+'). Le modifiche degli altri utenti non sono state sovrascritte. Esporta la tua copia prima di aggiornare.');
+  if(!latest||!latest.data||latest.revision===undefined)throw Error('Impossibile rileggere i dati aggiornati. Nessun salvataggio effettuato.');
+  const rebased=rebasePatch({baseline:priorBaseline,remote:latest.data,patch:currentPatch});
+  if(!rebased.safe)throw Error('Conflitto: '+rebased.conflicting.join('; ')+'. Nessuna modifica altrui è stata sovrascritta. Salva una copia prima di aggiornare.');
   currentRevision=latest.revision;
-  remoteBaseline=latest.data;
-  currentPatch=test.patch;
+  priorBaseline=latest.data;
+  currentPatch=rebased.patch;
   collisions++;
  }
  throw Error('Numero massimo di tentativi raggiunto.');
 }
-root.UMTEConflict={compareSections,reconcileSections,saveWithSafeRetry};
+root.UMTEConflict={compareSections,rebaseSection,rebasePatch,saveWithSafeRetry};
 })(typeof window==='undefined'?globalThis:window);
