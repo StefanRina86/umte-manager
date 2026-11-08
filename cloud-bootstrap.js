@@ -5,7 +5,7 @@ if(!window.supabase?.createClient||!config?.url||!config?.key){document.getEleme
 const cloud=window.supabase.createClient(config.url,config.key,{auth:{storageKey:'umte-manager-auth',persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}}),nativeFetch=window.fetch.bind(window);
 const status=document.getElementById('status'),form=document.getElementById('login'),exit=document.getElementById('exit');
 async function api(body){const {data,error}=await cloud.auth.getSession();if(error||!data.session)throw Error('Accedi con email e password.');return nativeFetch(config.url+'/functions/v1/umte-manager-api',{method:'POST',headers:{'Content-Type':'application/json',apikey:config.key,Authorization:'Bearer '+data.session.access_token},body:JSON.stringify(body)});}
-window.UMTECloudLogout=async()=>{await cloud.auth.signOut({scope:'local'});localStorage.removeItem('umte-manager-v01');location.href='./';};
+window.UMTECloudApi=api;\nwindow.UMTECloudLogout=async()=>{await cloud.auth.signOut({scope:'local'});localStorage.removeItem('umte-manager-v01');location.href='./';};
 exit.onclick=window.UMTECloudLogout;
 window.fetch=async(input,options={})=>{const value=typeof input==='string'?input:input instanceof URL?input.href:input.url,url=new URL(value,location.href);if(url.origin===location.origin&&['/api/state','/api/members'].includes(url.pathname)){const body=options.body?JSON.parse(options.body):{};return api({action:url.pathname==='/api/members'?'members':options.method==='POST'?'save':'state',...(url.pathname==='/api/members'&&options.method==='POST'?{update:body}:body)});}return nativeFetch(input,options);};
 function report(error){status.textContent=error.message||String(error);exit.hidden=false;form.hidden=false;}
@@ -29,7 +29,26 @@ async function open(){
  if(new URLSearchParams(location.search).has('accessi'))return accessManager(payload);
  window.UMTE_SHARED=payload;window.UMTE_BASELINE=payload.baseline;delete payload.baseline;
  const response=await nativeFetch('app.html',{cache:'no-store'});if(!response.ok)throw Error('Applicazione non disponibile.');
- const html=(await response.text()).replace('<head>','<head><script src="cloud-runtime.js"></script><link rel="stylesheet" href="mobile-improvements.css?v=20261108">');
+ let html=(await response.text()).replace('<head>','<head><script src="cloud-runtime.js"></script><link rel="stylesheet" href="mobile-improvements.css?v=20261108">');
+ if(payload.capabilities?.energyMaintenance){
+   const replace=(before,after)=>{if(!html.includes(before))throw Error('Versione applicativo incompatibile con gli aggiornamenti: '+before.slice(0,45));html=html.replace(before,after);};
+   replace('<script src="formazione-regole.js"></script>','<script src="formazione-regole-energia.js"></script>');
+   replace('<script src="formazione.js"></script>','<script src="formazione-energia.js"></script>');
+   replace("function validityActivePrefixes(validity){return['role','fitness','exercise','maintenance'];}",
+           "function validityActivePrefixes(validity){return /^MI\\.OPC\\./i.test(String(validity?.code||''))?['role','fitness','exercise']:['role','fitness','exercise','maintenance'];}");
+   replace("${validityCell(v.maintenanceOutcome,v.maintenanceExpiry)}",
+           "${/^MI\\.OPC\\./i.test(v.code||'')?'<span class=\"status missing\">Esercizio operativo · nessuna giornata Energia</span>':validityCell(v.maintenanceOutcome,v.maintenanceExpiry)}");
+   replace('function renderDiaryHistory(activityId)',
+           "function canEditDiaryRecord(entry){const u=window.UMTE_SHARED?.user||{};return ['owner','specialist','administrative'].includes(u.role)||String(entry.createdByUserId||'')===String(u.id||'')||(entry.createdByUserId==null&&entry.createdBy===u.name);}\n  function renderDiaryHistory(activityId)");
+   replace("can('diaryEdit')?`<button type=\"button\" class=\"diary-edit\" data-edit-diary",
+           "can('diaryEdit')&&canEditDiaryRecord(item)?`<button type=\"button\" class=\"diary-edit\" data-edit-diary");
+   html=html.replaceAll("can('diaryEdit')?`<button class=\"detail-button\" data-edit-report",
+                        "can('diaryEdit')&&canEditDiaryRecord(entry)?`<button class=\"detail-button\" data-edit-report");
+   replace("if(!item||!activity)return;el('diaryActualStart')",
+           "if(!item||!activity||!canEditDiaryRecord(item))return;el('diaryActualStart')");
+   replace('<script src="essenziale-ui.js"></script>',
+           '<link rel="stylesheet" href="energy-maintenance.css?v=20261108"><script src="energy-maintenance-ui.js?v=20261108"></script><script src="essenziale-ui.js"></script>');
+ }
  document.open();document.write(html);document.close();
 }
 form.onsubmit=async e=>{e.preventDefault();const button=document.getElementById('enter');button.disabled=true;status.textContent='Accesso in corso…';try{const {error}=await cloud.auth.signInWithPassword({email:document.getElementById('email').value.trim(),password:document.getElementById('password').value});if(error)throw Error('Email o password non valide.');document.getElementById('password').value='';await open();}catch(e){report(e);}finally{button.disabled=false;}};
