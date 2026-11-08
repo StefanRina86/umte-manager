@@ -4,6 +4,9 @@
 (function(root){
 'use strict';
 const equal=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
+// Never reconcile qualification, shifts, leave approvals or scheduling automatically.
+// Their invariants can span multiple records and require server-side validation.
+const safeRecordSections=new Set(['activityDiary','operationalRequests']);
 const own=(o,k)=>Object.prototype.hasOwnProperty.call(o||{},k);
 const clone=v=>v===undefined?undefined:JSON.parse(JSON.stringify(v));
 function indexed(items){
@@ -47,6 +50,10 @@ function rebasePatch({baseline,remote,patch}){
    else conflicting.push(section+': struttura modificata');
    continue;
   }
+  if(!equal(baseline[section],remote[section])&&!safeRecordSections.has(section)){
+   conflicting.push(section+': altra modifica presente; aggiornamento manuale necessario');
+   continue;
+  }
   const result=rebaseSection(baseline[section],local,remote[section]);
   if(!result.safe)conflicting.push(section+': '+(result.reason||'dati modificati da altri'));
   else merged[section]=result.value;
@@ -57,7 +64,7 @@ function compareSections({baseline,remote,patch}){
  const t=rebasePatch({baseline,remote,patch});
  return {safe:t.safe,conflicting:t.conflicting};
 }
-async function saveWithSafeRetry({save,load,revision,baseline,patch,maxAttempts=4}){
+async function saveWithSafeRetry({save,load,revision,baseline,patch,maxAttempts=16}){
  if(typeof save!=='function'||typeof load!=='function')throw Error('Servizio di salvataggio non configurato.');
  let currentRevision=revision,priorBaseline=baseline,currentPatch=clone(patch),collisions=0;
  for(let attempt=0;attempt<maxAttempts;attempt++){
