@@ -1,18 +1,26 @@
-.umte-mobile-shift-cards,.umte-mobile-view-toggle{display:none}
-@media(max-width:760px){
- #shifts:not([data-mobile-table="yes"]) .table-scroll:has(.shift-table){display:none!important}
- #shifts[data-mobile-table="yes"] .umte-mobile-shift-cards{display:none!important}
- .umte-mobile-shift-cards{display:grid;gap:12px;max-width:100%}
- .umte-mobile-view-toggle{display:block;width:100%;padding:12px;margin:10px 0;background:#eaf4f5;color:#113b4b;border:1px solid #bdd6dd;border-radius:9px;font-weight:750;min-height:44px}
- .umte-mobile-shift-card{background:white;border:1px solid #d2e2e8;border-radius:14px;padding:12px;box-shadow:0 7px 18px #102f3a0a}
- .umte-mobile-shift-card header{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:12px}
- .umte-mobile-shift-card header strong{font-size:.98rem;color:#102f40}
- .umte-mobile-shift-card header small{color:#657e88;text-align:right;max-width:45%}
- .umte-mobile-days{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
- .umte-mobile-day{display:grid;grid-template-columns:1fr auto;align-items:center;gap:4px;padding:10px;background:#eff5f7;border:1px solid #dbe8ed;border-radius:10px;text-align:left;min-height:64px}
- .umte-mobile-day>span{color:#556f7c;font-size:.78rem;font-weight:650}
- .umte-mobile-day>strong{font-size:1rem;background:#0f3548;color:#fff;padding:4px 8px;border-radius:7px}
- .umte-mobile-day>small{grid-column:1/-1;color:#657e88;font-size:.71rem}
- .umte-mobile-day.changed{border-color:#e8adb4;background:#fff5f6}
- .umte-mobile-day.changed>strong{background:#bd4251}
+.umte-mobile-week{display:none}
+@media(max-width:820px){
+  #shifts:not([data-mobile-table="yes"]) .umte-original-week-table{display:none!important}
+  #shifts[data-mobile-table="yes"] .umte-original-week-table{display:block!important}
+  .umte-mobile-week{display:block!important;margin:12px 0 22px;max-width:100%;min-width:0}
+  .umte-mobile-week-tools{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
+  .umte-mobile-week-tools label{display:grid;gap:5px;font-size:12px;font-weight:700;color:#446474}
+  .umte-mobile-week-tools select{height:44px;min-height:44px;width:100%;max-width:100%;padding:8px 11px;border:1px solid #cddce3;border-radius:9px;background:#fff;color:#14394b;font-size:15px}
+  .umte-mobile-week .umte-mobile-view-toggle{display:block!important;width:100%;min-height:44px;border:1px solid #b9d2d9;border-radius:9px;background:#e8f3f5;color:#123b4d;font-size:14px;font-weight:750;padding:10px}
+  #shifts[data-mobile-table="yes"] .umte-mobile-week-cards{display:none!important}
+  .umte-week-description{font-size:12px;line-height:1.5;color:#5c7480;margin:11px 2px}
+  .umte-mobile-week-cards{display:grid;gap:12px;min-width:0}
+  .umte-mobile-week-cards>h3{font-size:16px;margin:4px 0 0;color:#16394d}
+  .umte-week-count{font-size:12px;color:#657f89;margin:0}
+  .umte-mobile-shift-card{background:#fff;border:1px solid #d3e1e6;border-radius:13px;padding:12px;box-shadow:0 4px 14px #14384a0c;min-width:0}
+  .umte-mobile-shift-card header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+  .umte-mobile-shift-card header strong{font-size:14px;color:#10394e;line-height:1.3}
+  .umte-mobile-shift-card header small{font-size:12px;color:#647e89}
+  .umte-mobile-days{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+  .umte-mobile-day{display:grid!important;grid-template-columns:1fr auto!important;gap:5px!important;align-content:center!important;min-width:0!important;min-height:67px!important;text-align:left!important;padding:9px!important;border:1px solid #d8e4e9!important;border-radius:10px!important;background:#eef5f7!important}
+  .umte-mobile-day>span{color:#4d6977;font-size:11px;font-weight:750;white-space:nowrap}
+  .umte-mobile-day>strong{background:#12394d;color:#fff;font-size:13px;padding:5px 8px;border-radius:7px;text-align:center;max-width:100%;overflow-wrap:anywhere}
+  .umte-mobile-day>small{grid-column:1/-1;font-size:11px;color:#647986;line-height:1.2}
+  .umte-mobile-day.changed{background:#fff0f2!important;border-color:#e8adb8!important}
+  .umte-mobile-day.changed>strong{background:#b13f53!important}
 }
