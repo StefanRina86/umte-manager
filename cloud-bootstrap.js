@@ -5,7 +5,8 @@ if(!window.supabase?.createClient||!config?.url||!config?.key){document.getEleme
 const cloud=window.supabase.createClient(config.url,config.key,{auth:{storageKey:'umte-manager-auth',persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}}),nativeFetch=window.fetch.bind(window);
 const status=document.getElementById('status'),form=document.getElementById('login'),exit=document.getElementById('exit');
 async function api(body){const {data,error}=await cloud.auth.getSession();if(error||!data.session)throw Error('Accedi con email e password.');return nativeFetch(config.url+'/functions/v1/umte-manager-api',{method:'POST',headers:{'Content-Type':'application/json',apikey:config.key,Authorization:'Bearer '+data.session.access_token},body:JSON.stringify(body)});}
-window.UMTECloudApi=api;\nwindow.UMTECloudLogout=async()=>{await cloud.auth.signOut({scope:'local'});localStorage.removeItem('umte-manager-v01');location.href='./';};
+window.UMTECloudApi=api;
+window.UMTECloudLogout=async()=>{await cloud.auth.signOut({scope:'local'});localStorage.removeItem('umte-manager-v01');location.href='./';};
 exit.onclick=window.UMTECloudLogout;
 window.fetch=async(input,options={})=>{const value=typeof input==='string'?input:input instanceof URL?input.href:input.url,url=new URL(value,location.href);if(url.origin===location.origin&&['/api/state','/api/members'].includes(url.pathname)){const body=options.body?JSON.parse(options.body):{};return api({action:url.pathname==='/api/members'?'members':options.method==='POST'?'save':'state',...(url.pathname==='/api/members'&&options.method==='POST'?{update:body}:body)});}return nativeFetch(input,options);};
 function report(error){status.textContent=error.message||String(error);exit.hidden=false;form.hidden=false;}
