@@ -48,3 +48,41 @@ test('non-409 errors do not retry writes',async()=>{
  }),/Not authorized/);
  assert.equal(calls,1);
 });
+
+test('10 different rapportini merge without losing entries',async()=>{
+ const s=backend(),initial=s.snapshot();
+ const base={...initial.data,activityDiary:[]};
+ const ops=Array.from({length:10},(_,i)=>saveWithSafeRetry({
+  save:s.save,load:s.load,revision:initial.revision,baseline:base,
+  patch:{activityDiary:[{id:'R-'+i,createdByUserId:'TEST-'+i}]},maxAttempts:15
+ }));
+ await Promise.all(ops);
+ assert.equal(s.snapshot().data.activityDiary.length,10);
+ assert.equal(new Set(s.snapshot().data.activityDiary.map(r=>r.id)).size,10);
+});
+test('two concurrent edits to identical rapportino are blocked',async()=>{
+ const s=backend(),initial=s.snapshot();
+ const ops=['A','B'].map(v=>saveWithSafeRetry({
+  save:s.save,load:s.load,revision:initial.revision,
+  baseline:{...initial.data,activityDiary:[]},
+  patch:{activityDiary:[{id:'SAME',note:v}]}
+ }));
+ const results=await Promise.allSettled(ops);
+ assert.equal(results.filter(r=>r.status==='fulfilled').length,1);
+ assert.equal(results.filter(r=>r.status==='rejected').length,1);
+ assert.equal(s.snapshot().data.activityDiary.length,1);
+});
+test('unkeyed variations do not merge automatically',()=>{
+ assert.equal(compareSections({
+  baseline:{variations:[{date:'2026-11-08',shift:'M'}]},
+  remote:{variations:[{date:'2026-11-08',shift:'N'}]},
+  patch:{variations:[{date:'2026-11-08',shift:'P'}]}
+ }).safe,false);
+});
+test('invalid or duplicate record identifiers never auto-merge',()=>{
+ const {reconcileSections}=globalThis.UMTEConflict;
+ assert.equal(reconcileSections({
+  baseline:{activityDiary:[]},remote:{activityDiary:[{id:'A'}]},
+  patch:{activityDiary:[{id:'A'},{id:'A'}]}
+ }).safe,false);
+});
