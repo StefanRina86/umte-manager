@@ -29,10 +29,15 @@ function threeWayRows(key,base,ours,theirs){
   if(!same(b.get(id),t.get(id))&&!same(o.get(id),t.get(id)))
    return {safe:false,reason:'Il record '+id+' è stato modificato anche da un altro utente'};
  }
- const result=theirs.filter(row=>!changed.has(idOf(row)));
+ const result=[];
+ for(const row of theirs){
+  const id=idOf(row);
+  if(!changed.has(id))result.push(clone(row));
+  else if(o.has(id))result.push(clone(o.get(id)));
+ }
  for(const row of ours){
   const id=idOf(row);
-  if(changed.has(id)&&o.has(id)&&!result.some(other=>idOf(other)===id))result.push(clone(row));
+  if(changed.has(id)&&o.has(id)&&!t.has(id))result.push(clone(row));
  }
  return {safe:true,value:result,changedRecords:changed.size};
 }
