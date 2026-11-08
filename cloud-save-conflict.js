@@ -5,7 +5,7 @@
 'use strict';
 const same=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
 const clone=value=>value===undefined?undefined:JSON.parse(JSON.stringify(value));
-const mergeable=new Set(['leaveRequests','activities','activityDiary','peopleRecords','trainingEvents','medicalAppointments','safetyRecords','trainingCompletions','competencies','operationalRequests','courseCatalogOverrides']);
+const mergeable=new Set(['activityDiary','operationalRequests','leaveRequests','activities']);
 const idOf=item=>{
  if(!item||typeof item!=='object'||Array.isArray(item)||typeof item.id!=='string'&&typeof item.id!=='number')return null;
  const id=String(item.id);
@@ -75,5 +75,5 @@ async function saveWithSafeRetry({save,load,revision,baseline,patch,maxAttempts=
  }
  throw Error('Numero massimo di tentativi raggiunto');
 }
-root.UMTEConflict={compareSections,reconcile,saveWithSafeRetry};
+root.UMTEConflict={compareSections,reconcile,rebasePatch:reconcile,saveWithSafeRetry};
 })(typeof window==='undefined'?globalThis:window);
