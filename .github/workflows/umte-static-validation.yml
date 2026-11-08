@@ -1,0 +1,42 @@
+name: UMTE Manager - controlli statici
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  static-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check JavaScript syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in ./*.js; do
+            node --check "$file"
+          done
+      - name: Check application and mobile assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in index.html app.html cloud-bootstrap.js cloud-runtime.js mobile-polish.css mobile-navigation.js mobile-shift-cards.js; do
+            test -s "$file"
+          done
+          if grep -q 'mobile-ux-v2' cloud-bootstrap.js; then
+            echo 'Legacy mobile assets unexpectedly referenced'
+            exit 1
+          fi
+      - name: Block accidentally committed secret material
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -RnE 'sb_secret_[A-Za-z0-9_-]{15,}|SUPABASE_SERVICE_ROLE_KEY[[:space:]]*[:=][[:space:]]*["\x27]' --include='*.js' --include='*.html' --exclude-dir='.git' .; then
+            echo 'Potential administrative credentials in public source'
+            exit 1
+          fi
