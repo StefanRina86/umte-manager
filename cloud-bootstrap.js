@@ -30,7 +30,7 @@ async function open(){
  if(new URLSearchParams(location.search).has('accessi'))return accessManager(payload);
  window.UMTE_SHARED=payload;window.UMTE_BASELINE=payload.baseline;delete payload.baseline;
  const response=await nativeFetch('app.html',{cache:'no-store'});if(!response.ok)throw Error('Applicazione non disponibile.');
- let html=(await response.text()).replace('<head>','<head><script src="cloud-runtime.js?v=mobile-v2-20261108"></script><link rel="stylesheet" href="mobile-improvements.css?v=20261108">');
+ let html=(await response.text()).replace('<head>','<head><script src="cloud-save-conflict.js?v=safe-retry-20261108"></script><script src="cloud-runtime.js?v=safe-retry-20261108"></script><link rel="stylesheet" href="mobile-improvements.css?v=20261108">');
  if(payload.capabilities?.energyMaintenance){
    const replace=(before,after)=>{if(!html.includes(before))throw Error('Versione applicativo incompatibile con gli aggiornamenti: '+before.slice(0,45));html=html.replace(before,after);};
    replace('<script src="formazione-regole.js"></script>','<script src="formazione-regole-energia.js"></script>');
