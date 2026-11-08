@@ -86,3 +86,51 @@ test('invalid or duplicate record identifiers never auto-merge',()=>{
   patch:{activityDiary:[{id:'A'},{id:'A'}]}
  }).safe,false);
 });
+
+test('10 users edit different records within the SAME section without losing data',async()=>{
+ const people=Array.from({length:10},(_,i)=>({id:'p'+i,n:i,value:0}));
+ const s=backend(),seed=s.snapshot();
+ await s.save({revision:seed.revision,patch:{peopleRecords:people}});
+ const initial=s.snapshot();
+ const promises=people.map((_,index)=>saveWithSafeRetry({
+  save:s.save,load:s.load,revision:initial.revision,baseline:initial.data,
+  patch:{peopleRecords:people.map((p,i)=>({...p,value:i===index?index+1:0}))},
+  maxAttempts:15
+ }));
+ await Promise.all(promises);
+ assert.deepEqual(s.snapshot().data.peopleRecords.map(p=>p.value),[1,2,3,4,5,6,7,8,9,10]);
+});
+test('simultaneous edits to same identified record are blocked',async()=>{
+ const s=backend();
+ await s.save({revision:1,patch:{peopleRecords:[{id:'a',shift:'M'},{id:'b',shift:'N'}]}});
+ const initial=s.snapshot();
+ const results=await Promise.allSettled(['P','MIR'].map(shift=>saveWithSafeRetry({
+  save:s.save,load:s.load,revision:initial.revision,baseline:initial.data,
+  patch:{peopleRecords:[{id:'a',shift},{id:'b',shift:'N'}]}
+ })));
+ assert.equal(results.filter(r=>r.status==='fulfilled').length,1);
+ assert.equal(results.filter(r=>r.status==='rejected').length,1);
+});
+test('records lacking stable unique id never merge automatically',()=>{
+ const old={variations:[{personId:'a',date:'2026-11-08',shift:'M'}]};
+ const current={variations:[{personId:'a',date:'2026-11-08',shift:'N'}]};
+ const local={variations:[{personId:'a',date:'2026-11-08',shift:'P'}]};
+ const {rebasePatch}=globalThis.UMTEConflict;
+ assert.equal(rebasePatch({baseline:old,remote:current,patch:local}).safe,false);
+});
+test('deleted record conflicts with concurrent update',()=>{
+ const {rebasePatch}=globalThis.UMTEConflict;
+ const initial={activityDiary:[{id:'1',text:'a'},{id:'2',text:'b'}]};
+ const remote={activityDiary:[{id:'1',text:'updated'},{id:'2',text:'b'}]};
+ const local={activityDiary:[{id:'2',text:'b'}]};
+ assert.equal(rebasePatch({baseline:initial,remote,patch:local}).safe,false);
+});
+test('different record updates retain server additions',()=>{
+ const {rebasePatch}=globalThis.UMTEConflict;
+ const baseline={activityDiary:[{id:'A',text:'a'}]};
+ const remote={activityDiary:[{id:'A',text:'a'},{id:'B',text:'b'}]};
+ const local={activityDiary:[{id:'A',text:'updated'}]};
+ const m=rebasePatch({baseline,remote,patch:local});
+ assert.equal(m.safe,true);
+ assert.deepEqual(m.patch.activityDiary,[{id:'A',text:'updated'},{id:'B',text:'b'}]);
+});
