@@ -48,7 +48,7 @@ function compareSections(args){
  const {safe,conflicting}=reconcileSections(args);
  return {safe,conflicting};
 }
-async function saveWithSafeRetry({save,load,revision,baseline,patch,maxAttempts=4}){
+async function saveWithSafeRetry({save,load,revision,baseline,patch,maxAttempts=16}){
  if(typeof save!=='function'||typeof load!=='function')throw Error('Servizio di salvataggio non configurato.');
  let currentRevision=revision,remoteBaseline=baseline,collisions=0,currentPatch=patch;
  for(let attempt=0;attempt<maxAttempts;attempt++){
