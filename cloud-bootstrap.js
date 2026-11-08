@@ -48,7 +48,7 @@ async function open(){
    replace("if(!item||!activity)return;el('diaryActualStart')",
            "if(!item||!activity||!canEditDiaryRecord(item))return;el('diaryActualStart')");
    replace('<script src="essenziale-ui.js"></script>',
-           '<link rel="stylesheet" href="energy-maintenance.css?v=20261108"><script src="energy-maintenance-ui.js?v=20261108"></script><script src="essenziale-ui.js"></script>');
+           '<link rel="stylesheet" href="energy-maintenance.css?v=20261108"><link rel="stylesheet" href="my-team-ui.css?v=20261108"><script src="energy-maintenance-ui.js?v=20261108"></script><script src="my-team-ui.js?v=20261108"></script><script src="essenziale-ui.js"></script>');
  }
  document.open();document.write(html);document.close();
 }
