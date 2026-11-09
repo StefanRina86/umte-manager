@@ -48,6 +48,10 @@ Deno.serve(async request => {
     redirectTo:'https://stefanrina86.github.io/umte-manager/imposta-password.html'
   });
   if(inviteError || !invitation?.user?.id){
+    const code=String(inviteError?.code||'');
+    const status=Number(inviteError?.status||0);
+    if(code==='email_address_not_authorized')return respond({error:'Il servizio email Supabase predefinito non consente di invitare questa email: configura un provider SMTP autorizzato per il progetto.'},422);
+    if(status===429 || code==='over_email_send_rate_limit')return respond({error:'Limite inviti email raggiunto. Il servizio Supabase predefinito consente solo un numero ridotto di email; valuta SMTP dedicato.'},429);
     return respond({error:'Invito non inviato. Verifica che la email non sia già registrata in Supabase e che il redirect sia consentito nelle impostazioni Auth.'},409);
   }
   const newId=invitation.user.id;
