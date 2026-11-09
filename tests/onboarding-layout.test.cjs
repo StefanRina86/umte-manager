@@ -22,7 +22,11 @@ window.fetch=async function(url,opts){
   {id:'TEST-2',displayName:'Inactive Test',nucleus:'NUCLEO TEST',team:'1',active:false}
  ]}};
  if(request.action==='members')data={members:[]};
+ if(request.action==='candidates')data={candidates:[
+  {personId:'TEST-1',displayName:'Person Test',nucleus:'NUCLEO TEST',team:'1',qualification:'CT',email:'test.person@example.invalid',matchingNucleus:true,suggestedRole:'chief',needsVerification:false}
+ ]};
  if(request.action==='invite')data={ok:true,message:'Invito inviato (simulazione)'};
+ if(request.action==='testInvite')data={ok:true,pending:true,message:'Invito di collaudo simulato (account disabilitato)'};
  return {ok:true,status:200,json:async()=>data};
 };`;
 const passwordMock=`
@@ -42,6 +46,8 @@ for(const width of [390,1440]){
    await page.waitForSelector('#inviteForm:not([hidden])');
    assert.equal(await page.locator('#person option').count(),2);
    await page.locator('#person').selectOption('TEST-1');
+   assert.equal(await page.locator('#email').inputValue(),'test.person@example.invalid');
+   assert.equal(await page.locator('#role').inputValue(),'chief');
    await page.locator('#email').fill('synthetic@example.invalid');
    await page.locator('#role').selectOption('viewer');
    await page.locator('#verified').check();
@@ -55,6 +61,22 @@ for(const width of [390,1440]){
   }finally{await browser.close();}
  });
 }
+test('owner can trigger isolated test invitation without a CID',async()=>{
+ const browser=await chromium.launch({headless:true});
+ try{
+  const page=await browser.newPage({viewport:{width:390,height:850}});
+  const errors=[];page.on('pageerror',e=>errors.push(String(e)));
+  await page.setContent(pageHtml('accessi-colleghi.html',inviteMock));
+  await page.waitForSelector('#inviteForm:not([hidden])');
+  page.on('dialog',dialog=>dialog.accept());
+  await page.locator('#testInvite').click();
+  await page.waitForFunction(()=>document.getElementById('testInviteStatus').textContent.includes('Invito di collaudo simulato'));
+  const invited=await page.evaluate(()=>window.calls.filter(x=>x.request.action==='testInvite'));
+  assert.equal(invited.length,1);
+  assert.deepEqual(invited[0].request,{action:'testInvite'});
+  assert.deepEqual(errors,[]);
+ }finally{await browser.close();}
+});
 test('first-password page requires matching passwords then updates password',async()=>{
  const browser=await chromium.launch({headless:true});
  try{
