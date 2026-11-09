@@ -11,7 +11,7 @@
 <button id="send" type="submit">Invia invito personale</button><p id="status" role="status" aria-live="polite"></p>
 </fieldset></form><p id="summary"></p><small>Gli account non possono essere condivisi. Non utilizzare indirizzi generici o password comuni. Non inserire i dati del personale in repository pubblici.</small></main>
 <script>
-(async()=>{
+window.addEventListener('DOMContentLoaded',async()=>{
 'use strict';
 const $=id=>document.getElementById(id),config=window.UMTE_CLOUD_CONFIG;
 if(!window.supabase?.createClient||!config?.url||!config?.key){$('info').textContent='Connessione non disponibile.';return;}
@@ -43,5 +43,5 @@ $('inviteForm').addEventListener('submit',async e=>{
  finally{button.disabled=false;}
 });
 try{await load();}catch(err){$('info').textContent=err.message||String(err);}
-})();
+});
 </script></body></html>
