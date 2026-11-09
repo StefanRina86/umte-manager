@@ -1,0 +1,47 @@
+<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="strict-origin-when-cross-origin"><title>UMTE Manager · Invita colleghi</title>
+<style>*{box-sizing:border-box}body{font:16px system-ui;margin:0;background:#eff5f7;color:#123447;padding:18px}main{max-width:750px;margin:20px auto;background:#fff;border:1px solid #d2e2e8;border-radius:16px;padding:22px}h1{margin:6px 0 8px}p{line-height:1.45}label{display:grid;gap:6px;margin:14px 0;font-weight:650}input,select,button{font:inherit;width:100%;min-height:46px;padding:10px;border-radius:8px;border:1px solid #b9ccd3;background:#fff;color:#123447}button{background:#10384e;color:white;border:0;font-weight:700;cursor:pointer}button:disabled{opacity:.55;cursor:wait}a{color:#12678a}#info{padding:12px;background:#edf5f7;border-radius:8px}#status{white-space:pre-line;font-weight:600}small{color:#536c77}.inline{display:flex;gap:10px;align-items:flex-start}.inline input{width:22px;height:22px;min-height:0;flex:none;margin-top:0}.inline span{font-weight:450}fieldset{border:1px solid #d5e2e8;border-radius:10px;padding:16px}legend{font-weight:700}#summary{font-size:14px;color:#456a78}</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" defer></script><script src="config.js?v=security-20261105" defer></script></head>
+<body><main><a href="./?accessi=1">Torna alla gestione accessi</a><h1>Invita un collega</h1><p>Solo il responsabile può inviare inviti. Il nuovo profilo resta <strong>disabilitato</strong> fino alla tua approvazione nella pagina Gestisci accessi.</p><div id="info">Verifica della sessione…</div>
+<form id="inviteForm" hidden>
+<fieldset><legend>Nuovo account personale</legend>
+<label for="person">Dipendente (CID)</label><select id="person" required></select>
+<label for="email">Email personale verificata</label><input id="email" type="email" autocomplete="email" required maxlength="254" placeholder="nome.cognome@azienda.it">
+<label for="role">Ruolo da assegnare dopo approvazione</label><select id="role" required><option value="">Seleziona il ruolo</option><option value="chief">Capo Tecnico</option><option value="preposto">Operativo / Preposto</option><option value="viewer">Consultazione</option><option value="specialist">Specialista</option><option value="administrative">Amministrativo</option></select>
+<label class="inline"><input id="verified" type="checkbox" required><span>Confermo che questa email appartiene al collega selezionato e che l'accesso è autorizzato.</span></label>
+<button id="send" type="submit">Invia invito personale</button><p id="status" role="status" aria-live="polite"></p>
+</fieldset></form><p id="summary"></p><small>Gli account non possono essere condivisi. Non utilizzare indirizzi generici o password comuni. Non inserire i dati del personale in repository pubblici.</small></main>
+<script>
+(async()=>{
+'use strict';
+const $=id=>document.getElementById(id),config=window.UMTE_CLOUD_CONFIG;
+if(!window.supabase?.createClient||!config?.url||!config?.key){$('info').textContent='Connessione non disponibile.';return;}
+const cloud=window.supabase.createClient(config.url,config.key,{auth:{storageKey:'umte-manager-auth',persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
+const token=async()=>{const {data,error}=await cloud.auth.getSession();if(error||!data.session)throw Error('Sessione scaduta: accedi di nuovo a UMTE Manager.');return data.session.access_token;};
+const call=async (name,body)=>{const r=await fetch(config.url+'/functions/v1/'+name,{method:'POST',headers:{'Content-Type':'application/json',apikey:config.key,Authorization:'Bearer '+await token()},body:JSON.stringify(body)});let d={};try{d=await r.json();}catch{}if(!r.ok)throw Error(d.error||'Errore HTTP '+r.status);return d;};
+const load=async()=>{
+ const state=await call('umte-manager-api',{action:'state'}),members=await call('umte-manager-api',{action:'members'});
+ if(state.user?.role!=='owner')throw Error('Pagina riservata al responsabile.');
+ const ids=new Set((members.members||[]).map(m=>String(m.person_id||'')));
+ const selectable=(state.data.peopleRecords||[]).filter(p=>p.active!==false&&!ids.has(String(p.id)));
+ const select=$('person');select.replaceChildren(new Option('Seleziona un dipendente',''));
+ for(const p of selectable)select.add(new Option([p.displayName,p.nucleus,p.team?'Squadra '+p.team:'','CID '+p.id].filter(Boolean).join(' · '),String(p.id)));
+ $('info').textContent='Archivio collegato. Scegli il dipendente, verifica la sua email e invia l’invito.';
+ $('summary').textContent=selectable.length+' dipendenti senza un account associato. Le email non sono memorizzate nell’anagrafica.';
+ $('inviteForm').hidden=false;
+};
+$('inviteForm').addEventListener('submit',async e=>{
+ e.preventDefault();
+ const button=$('send');button.disabled=true;$('status').textContent='Invio dell’invito in corso…';
+ try{
+  const body={action:'invite',email:$('email').value.trim(),personId:$('person').value,role:$('role').value,emailVerified:$('verified').checked};
+  if(!body.personId||!body.role||!body.emailVerified)throw Error('Completa e verifica tutti i campi.');
+  const result=await call('umte-manager-invites',body);
+  $('status').textContent=result.message||'Invito inviato';
+  $('email').value='';$('role').value='';$('verified').checked=false;
+  await load();
+ }catch(err){$('status').textContent=err.message||String(err);}
+ finally{button.disabled=false;}
+});
+try{await load();}catch(err){$('info').textContent=err.message||String(err);}
+})();
+</script></body></html>
