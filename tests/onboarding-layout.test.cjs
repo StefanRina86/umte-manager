@@ -57,7 +57,12 @@ for(const width of [390,1440]){
    assert.equal(call.length,1);
    assert.deepEqual(call[0].request,{action:'invite',email:'synthetic@example.invalid',personId:'TEST-1',role:'viewer',emailVerified:true});
    assert.deepEqual(errors,[]);
-   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));
+   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),'Invite page has horizontal overflow at '+width+'px');
+   const redirect=page.locator('code').first();
+   if(width===390&&await redirect.count()){
+    const geometry=await redirect.boundingBox();
+    assert.ok(geometry.x+geometry.width<=width+2,'Unbroken redirect URL exceeds mobile viewport');
+   }
   }finally{await browser.close();}
  });
 }
