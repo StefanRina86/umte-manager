@@ -1,3 +1,15 @@
+## Inviti ai colleghi (9 novembre 2026)
+
+- Accesso del responsabile: `/?accessi=1` → **Invita nuovi colleghi**, oppure `/accessi-colleghi.html`.
+- Nuova funzione Supabase dedicata: `umte-manager-invites`, JWT richiesto, origine verificata e identità controllata tramite `auth.getUser`; solo il ruolo `owner` attivo può invitare.
+- L'invito richiede email verificata, CID di un dipendente attivo e ruolo ammesso. Nessun account è abilitato automaticamente: `enabled=false` fino all'approvazione in Gestisci accessi.
+- La prima password viene impostata dal destinatario in `/imposta-password.html`; non generare né distribuire password collettive.
+- **Configurazione Auth essenziale:** Supabase → Authentication → URL Configuration → aggiungere come Redirect URL `https://stefanrina86.github.io/umte-manager/imposta-password.html`. Non cambiare il Site URL o le impostazioni condivise con RA/Sezionatori. Senza redirect autorizzato, Supabase può ignorare il parametro `redirectTo` nell'invito.
+- Richiesti indirizzi email personali verificati. Non è possibile creare automaticamente i 55 account mancanti dalla sola anagrafica, che non contiene indirizzi email.
+- Sorgente della funzione: `supabase/functions/umte-manager-invites/index.ts`. Gli inviti reali e la consegna delle email vanno ancora verificati con un account di prova autorizzato.
+- Prima della distribuzione a personale RFI, ottenere/accertare l'autorizzazione aziendale al trattamento dei dati su hosting esterni e completare collaudo con account reali.
+
+---
 > **Stato attuale (8 novembre 2026):** il frontend di UMTE Manager è pubblicato su GitHub Pages e utilizza Supabase tramite la funzione Edge dedicata. Il progetto è in collaudo, **non certificato per l'uso generalizzato**. Il testo storico sottostante descrive anche le fasi precedenti della migrazione.
 
 ### Salvataggi concorrenti (frontend)
