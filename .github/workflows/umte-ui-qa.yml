@@ -24,11 +24,30 @@ jobs:
           node-version: '22'
       - run: npm install --no-save playwright
       - run: npx playwright install --with-deps chromium
+      - name: Check Playwright and Chromium installation
+        run: |
+          node --version
+          npm --version
+          npx playwright --version
+          npx playwright install --dry-run chromium
       - name: Test synthetic schedules at 375, 390, 430, 768 and 1440px
-        run: node --test tests/mobile-layout.test.cjs tests/onboarding-layout.test.cjs
+        id: layout
+        shell: bash
+        run: |
+          set -o pipefail
+          node --test --test-reporter=spec tests/mobile-layout.test.cjs 2>&1 | tee "${RUNNER_TEMP}/umte-layout-test-log.txt"
+      - name: Test invitations and first-password onboarding
+        if: always()
+        id: onboarding
+        shell: bash
+        run: |
+          set -o pipefail
+          node --test --test-reporter=spec tests/onboarding-layout.test.cjs 2>&1 | tee "${RUNNER_TEMP}/umte-onboarding-test-log.txt"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: umte-visual-qa-synthetic
-          path: ${{ runner.temp }}/umte-*.png
+          path: |
+            ${{ runner.temp }}/umte-*.png
+            ${{ runner.temp }}/umte-*-test-log.txt
           retention-days: 7
