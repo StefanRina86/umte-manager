@@ -48,9 +48,9 @@ $('inviteForm').addEventListener('submit',async e=>{
   const body={action:'invite',email:$('email').value.trim(),personId:$('person').value,role:$('role').value,emailVerified:$('verified').checked};
   if(!body.personId||!body.role||!body.emailVerified)throw Error('Completa e verifica tutti i campi.');
   const result=await call('umte-manager-invites',body);
-  $('status').textContent=result.message||'Invito inviato';
   $('email').value='';$('role').value='';$('verified').checked=false;
   await load();
+  $('status').textContent=result.message||'Invito inviato';
  }catch(err){$('status').textContent=err.message||String(err);}
  finally{button.disabled=false;}
 });
