@@ -9,7 +9,7 @@
 <label for="role">Ruolo da assegnare dopo approvazione</label><select id="role" required><option value="">Seleziona il ruolo</option><option value="chief">Capo Tecnico</option><option value="preposto">Operativo / Preposto</option><option value="viewer">Consultazione</option><option value="specialist">Specialista</option><option value="administrative">Amministrativo</option></select>
 <label class="inline"><input id="verified" type="checkbox" required><span>Confermo che questa email appartiene al collega selezionato e che l'accesso è autorizzato.</span></label>
 <button id="send" type="submit">Invia invito personale</button><p id="status" role="status" aria-live="polite"></p>
-</fieldset></form><p id="summary"></p><small>Gli account non possono essere condivisi. Non utilizzare indirizzi generici o password comuni. Non inserire i dati del personale in repository pubblici.</small></main>
+</fieldset></form><p id="summary"></p><button id="bulkInvites" type="button" hidden disabled>Invita colleghi verificati in blocco</button><p id="bulkStatus" role="status" aria-live="polite"></p><small>Gli account non possono essere condivisi. Non utilizzare indirizzi generici o password comuni. Non inserire i dati del personale in repository pubblici.</small></main>
 <script>
 window.addEventListener('DOMContentLoaded',async()=>{
 'use strict';
@@ -18,11 +18,13 @@ if(!window.supabase?.createClient||!config?.url||!config?.key){$('info').textCon
 const cloud=window.supabase.createClient(config.url,config.key,{auth:{storageKey:'umte-manager-auth',persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
 const token=async()=>{const {data,error}=await cloud.auth.getSession();if(error||!data.session)throw Error('Sessione scaduta: accedi di nuovo a UMTE Manager.');return data.session.access_token;};
 const call=async (name,body)=>{const r=await fetch(config.url+'/functions/v1/'+name,{method:'POST',headers:{'Content-Type':'application/json',apikey:config.key,Authorization:'Bearer '+await token()},body:JSON.stringify(body)});let d={};try{d=await r.json();}catch{}if(!r.ok)throw Error(d.error||'Errore HTTP '+r.status);return d;};
+let preparedCandidates=[];let firstInviteSucceeded=false;
 const load=async()=>{
  const state=await call('umte-manager-api',{action:'state'});
  if(state.user?.role!=='owner')throw Error('Pagina riservata al responsabile.');
  const roster=await call('umte-manager-invites',{action:'candidates'});
  const candidates=roster.candidates||[];
+ preparedCandidates=candidates;
  const select=$('person');select.replaceChildren(new Option('Seleziona un dipendente',''));
  for(const p of candidates)select.add(new Option([p.displayName,p.nucleus,p.team?'Squadra '+p.team:'',p.email?'Email disponibile':'Email da indicare'].filter(Boolean).join(' · '),String(p.personId)));
  const byCid=new Map(candidates.map(p=>[String(p.personId),p]));
@@ -40,6 +42,10 @@ const load=async()=>{
  $('info').textContent='Seleziona il dipendente: email e ruolo saranno proposti automaticamente, ma l’invito parte soltanto dopo la conferma del responsabile.';
  $('summary').textContent=candidates.length+' persone da gestire · '+matched+' email corrispondenti · '+consistent+' coincidono anche per nucleo. Gli indirizzi sono consultati da Supabase e non vengono pubblicati su GitHub.';
  $('inviteForm').hidden=false;
+ const eligible=candidates.filter(p=>p.email&&p.matchingNucleus);
+ $('bulkInvites').hidden=!eligible.length;
+ $('bulkInvites').disabled=!firstInviteSucceeded||!eligible.length;
+ $('bulkInvites').textContent='Invita in blocco '+eligible.length+' colleghi con email e nucleo corrispondenti';
 };
 $('inviteForm').addEventListener('submit',async e=>{
  e.preventDefault();
@@ -49,10 +55,27 @@ $('inviteForm').addEventListener('submit',async e=>{
   if(!body.personId||!body.role||!body.emailVerified)throw Error('Completa e verifica tutti i campi.');
   const result=await call('umte-manager-invites',body);
   $('email').value='';$('role').value='';$('verified').checked=false;
+  firstInviteSucceeded=true;
   await load();
   $('status').textContent=result.message||'Invito inviato';
  }catch(err){$('status').textContent=err.message||String(err);}
  finally{button.disabled=false;}
+});
+$('bulkInvites').addEventListener('click',async()=>{
+ const selected=preparedCandidates.filter(p=>p.email&&p.matchingNucleus);
+ if(!firstInviteSucceeded||!selected.length)return;
+ if(!confirm('Inviare '+selected.length+' inviti individuali agli indirizzi RFI con nome e nucleo corrispondenti? Tutti i profili resteranno disabilitati finché non saranno approvati.'))return;
+ const button=$('bulkInvites');button.disabled=true;let sent=0,failed=null;
+ for(const p of selected){
+  $('bulkStatus').textContent='Inviti inviati: '+sent+' di '+selected.length+'. Verifica invio in corso…';
+  try{
+   await call('umte-manager-invites',{action:'invite',email:p.email,personId:p.personId,role:p.suggestedRole,emailVerified:true});
+   sent++;
+  }catch(err){failed=err.message||String(err);break;}
+ }
+ try{await load();}catch(err){failed=(failed?failed+' · ':'')+(err.message||String(err));}
+ $('bulkStatus').textContent=sent+' inviti inviati. '+(failed?'Interrotto: '+failed+' Riapri la lista dopo aver risolto il problema.':'Controlla i nuovi profili in Gestisci accessi prima di abilitarli.');
+ button.disabled=!firstInviteSucceeded;
 });
 try{await load();}catch(err){$('info').textContent=err.message||String(err);}
 });
