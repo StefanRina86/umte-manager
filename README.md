@@ -6,6 +6,7 @@
 - La prima password viene impostata dal destinatario in `/imposta-password.html`; non generare né distribuire password collettive.
 - **Configurazione Auth essenziale:** Supabase → Authentication → URL Configuration → aggiungere come Redirect URL `https://stefanrina86.github.io/umte-manager/imposta-password.html`. Non cambiare il Site URL o le impostazioni condivise con RA/Sezionatori. Senza redirect autorizzato, Supabase può ignorare il parametro `redirectTo` nell'invito.
 - Richiesti indirizzi email personali verificati. Non è possibile creare automaticamente i 55 account mancanti dalla sola anagrafica, che non contiene indirizzi email.
+- Il servizio email predefinito di Supabase è limitato (2 email/ora, generalmente solo destinatari appartenenti al team dell'organizzazione). Per invitare i 55 collaboratori occorre configurare un provider SMTP dedicato o Send Email hook con servizio autorizzato; questo influisce sull'Auth condiviso con RA e Sezionatori.
 - Sorgente della funzione: `supabase/functions/umte-manager-invites/index.ts`. Gli inviti reali e la consegna delle email vanno ancora verificati con un account di prova autorizzato.
 - Prima della distribuzione a personale RFI, ottenere/accertare l'autorizzazione aziendale al trattamento dei dati su hosting esterni e completare collaudo con account reali.
 
