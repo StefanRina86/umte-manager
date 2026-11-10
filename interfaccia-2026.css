@@ -1,0 +1,27 @@
+/* UMTE 2026-11 release polish — presentation only, existing permissions intact. */
+:root{--navy:#103e54;--navy2:#19566c;--blue:#2674a5;--cyan:#2ac0b2;--bg:#f0f5f6;--line:#d9e6e9;--shadow:0 12px 32px rgba(19,58,73,.065)}
+body{background:linear-gradient(160deg,#f6faf9 0%,#edf4f5 68%,#eff2f7 100%)}
+.topbar{box-shadow:0 2px 14px rgba(8,43,60,.035)}
+.brand-mark{background:linear-gradient(145deg,#55d9cb,#19b4a6);box-shadow:0 8px 24px rgba(39,202,181,.2)}
+.nav-item{transition:background-color .15s ease,color .15s ease}
+.nav-item:hover,.nav-item.active{background:rgba(88,232,207,.16)}
+.view>.page-heading h1,.page-heading h1{font-size:clamp(1.5rem,2.4vw,2rem)}
+.panel,.metric,.card{box-shadow:var(--shadow)}
+.button,.nav-item,.text-button{touch-action:manipulation}
+.button:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,a:focus-visible{outline:3px solid #70b4d4;outline-offset:2px}
+input,select,textarea{accent-color:#17817d}
+.view .toolbar{min-width:0}
+.view .toolbar select,.view .toolbar input{max-width:100%}
+.view .page-heading{flex-wrap:wrap}
+.view .heading-actions{flex-wrap:wrap}
+#sharedSaveStatus{border-radius:12px!important;box-shadow:0 8px 28px rgba(16,58,72,.16)!important;font:600 13px/1.4 system-ui!important}
+#sharedSaveStatus button{min-height:36px;padding:6px 12px;border:1px solid #82999c;border-radius:8px;background:white;cursor:pointer;margin-left:8px}
+@media(max-width:820px){
+ .view{padding:clamp(12px,3vw,22px)}
+ .page-heading{gap:10px;margin-bottom:16px}
+ .panel,.metric{border-radius:14px}
+ .button,button,select,input{min-height:38px}
+ .topbar{padding-inline:14px}
+ .view .page-heading h1{line-height:1.15}
+}
+@media(prefers-reduced-motion:reduce){.nav-item{transition:none}}
