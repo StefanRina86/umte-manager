@@ -9,7 +9,7 @@
 <label for="role">Ruolo da assegnare dopo approvazione</label><select id="role" required><option value="">Seleziona il ruolo</option><option value="chief">Capo Tecnico</option><option value="preposto">Operativo / Preposto</option><option value="viewer">Consultazione</option><option value="specialist">Specialista</option><option value="administrative">Amministrativo</option></select>
 <label class="inline"><input id="verified" type="checkbox" required><span>Confermo che questa email appartiene al collega selezionato e che l'accesso è autorizzato.</span></label>
 <button id="send" type="submit">Invia invito personale</button><p id="status" role="status" aria-live="polite"></p>
-</fieldset></form><section id="testInviteSection" style="margin:18px 0;padding:14px;border:1px solid #c8dde8;border-radius:10px"><h2 style="font-size:18px;margin:0 0 8px">Invito di prova</h2><p>Invia una sola email a <strong>s.rinaldi@me.com</strong> per collaudare impostazione password e consegna. Il profilo di prova resta disabilitato e senza CID.</p><button id="testInvite" type="button" disabled>Invia invito di prova</button><p id="testInviteStatus" role="status" aria-live="polite"></p></section><p id="summary"></p><button id="bulkInvites" type="button" hidden disabled>Invita colleghi verificati in blocco</button><p id="bulkStatus" role="status" aria-live="polite"></p><small>Gli account non possono essere condivisi. Non utilizzare indirizzi generici o password comuni. Non inserire i dati del personale in repository pubblici.</small></main>
+</fieldset></form><p id="summary"></p><button id="bulkInvites" type="button" hidden disabled>Invita colleghi verificati in blocco</button><p id="bulkStatus" role="status" aria-live="polite"></p><small>Gli account non possono essere condivisi. Non utilizzare indirizzi generici o password comuni. Non inserire i dati del personale in repository pubblici.</small></main>
 <script>
 window.addEventListener('DOMContentLoaded',async()=>{
 'use strict';
@@ -42,7 +42,7 @@ const load=async()=>{
  $('info').textContent='Seleziona il dipendente: email e ruolo saranno proposti automaticamente, ma l’invito parte soltanto dopo la conferma del responsabile.';
  $('summary').textContent=candidates.length+' persone da gestire · '+matched+' email corrispondenti · '+consistent+' coincidono anche per nucleo. Gli indirizzi sono consultati da Supabase e non vengono pubblicati su GitHub.';
  $('inviteForm').hidden=false;
- $('testInvite').disabled=false;
+
  const eligible=candidates.filter(p=>p.email&&p.matchingNucleus);
  $('bulkInvites').hidden=!eligible.length;
  $('bulkInvites').disabled=!eligible.length;
@@ -60,12 +60,6 @@ $('inviteForm').addEventListener('submit',async e=>{
   $('status').textContent=result.message||'Invito inviato';
  }catch(err){$('status').textContent=err.message||String(err);}
  finally{button.disabled=false;}
-});
-$('testInvite').addEventListener('click',async()=>{
- if(!confirm('Inviare una email di prova a s.rinaldi@me.com? Il nuovo profilo resterà disabilitato.'))return;
- const button=$('testInvite');button.disabled=true;$('testInviteStatus').textContent='Invio di prova in corso…';
- try{const result=await call('umte-manager-invites',{action:'testInvite'});$('testInviteStatus').textContent=result.message||'Invito inviato';}
- catch(err){$('testInviteStatus').textContent=err.message||String(err);button.disabled=false;}
 });
 $('bulkInvites').addEventListener('click',async()=>{
  const selected=preparedCandidates.filter(p=>p.email&&p.matchingNucleus);
