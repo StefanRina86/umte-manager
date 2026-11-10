@@ -1,0 +1,17 @@
+/* Friendly contextual guidance; no access control or data logic here. */
+.umte-guide-launch{position:fixed;right:18px;bottom:18px;z-index:999800;display:flex;align-items:center;gap:9px;border:1px solid #0c5157;background:#105c63;color:#fff;padding:12px 17px;border-radius:999px;font:700 14px/1.2 system-ui;box-shadow:0 12px 30px #0c3c4d35;cursor:pointer;min-height:46px}
+.umte-guide-launch:hover{background:#0b4d57}
+.umte-guide-launch:focus-visible,.umte-guide-close:focus-visible{outline:3px solid #7db7e9;outline-offset:2px}
+.umte-guide-panel{position:fixed;z-index:999900;right:18px;bottom:76px;width:min(420px,calc(100vw - 28px));max-height:min(74vh,640px);overflow:auto;border:1px solid #d4e3e5;border-radius:18px;background:#fff;color:#183d4a;box-shadow:0 18px 55px #102e4440;font:14px/1.55 system-ui;padding:22px}
+.umte-guide-panel[hidden]{display:none}
+.umte-guide-top{display:flex;justify-content:space-between;align-items:start;gap:12px}
+.umte-guide-panel h2{margin:0 0 6px;font-size:22px;letter-spacing:-.025em;color:#123d4a}
+.umte-guide-panel h3{margin:16px 0 4px;font-size:15px}
+.umte-guide-panel p{margin:4px 0 10px;color:#476575}
+.umte-guide-panel ol{padding-left:23px;margin:10px 0}
+.umte-guide-panel li{margin:9px 0}
+.umte-guide-panel .umte-guide-hint{padding:12px;background:#eaf5f4;border-radius:10px}
+.umte-guide-close{flex-shrink:0;width:36px;height:36px;border-radius:9px;border:1px solid #c9dadd;background:#f1f6f7;color:#194c59;font:700 19px system-ui;cursor:pointer}
+.umte-guide-panel a{color:#146879;text-decoration:underline}
+@media(max-width:820px){.umte-guide-launch{right:12px;bottom:76px;padding:12px 15px}.umte-guide-panel{right:8px;bottom:129px;width:calc(100vw - 16px);max-height:min(63vh,640px)}}
+@media(prefers-reduced-motion:reduce){.umte-guide-launch{transition:none}}
