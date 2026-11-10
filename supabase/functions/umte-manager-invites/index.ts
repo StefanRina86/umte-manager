@@ -26,6 +26,29 @@ Deno.serve(async request => {
   const raw=await request.text();
   if(raw.length>4096)return respond({error:'Richiesta troppo grande'},413);
   let body: any;try{body=JSON.parse(raw)}catch{return respond({error:'Richiesta non valida'},400)}
+  if(body.action==='candidates'){
+    const [{data:state,error:stateError},{data:allow,error:allowError},{data:members,error:membersError}]=await Promise.all([
+      service.from('umte_manager_state').select('data').eq('id',1).maybeSingle(),
+      service.from('umte_allowed_users').select('email,full_name,nucleo,active').eq('active',true),
+      service.from('umte_manager_members').select('person_id,email')
+    ]);
+    if(stateError||allowError||membersError||!state)return respond({error:'Elenco inviti non disponibile'},503);
+    const normalized=(v:string)=>String(v||'').trim().toLocaleLowerCase('it-IT').replace(/\s+/g,' ');
+    const byName=new Map<string,any[]>();
+    for(const a of allow||[]){const n=normalized(a.full_name);if(!n)continue;byName.set(n,[...(byName.get(n)||[]),a]);}
+    const taken=new Set((members||[]).filter((m:any)=>m.person_id).map((m:any)=>String(m.person_id)));
+    const already=new Set((members||[]).map((m:any)=>normalized(m.email)));
+    const candidates=(state.data?.peopleRecords||[]).filter((p:any)=>p.active!==false&&String(p.qualification||'').trim().toUpperCase()!=='CUM'&&!taken.has(String(p.id))).map((p:any)=>{
+      const name=String(p.displayName||[p.name,p.surname].filter(Boolean).join(' '));
+      const matching=byName.get(normalized([p.name,p.surname].filter(Boolean).join(' ')))||[];
+      const address=matching.length===1&&matching[0].email&&!already.has(normalized(matching[0].email))?String(matching[0].email).toLowerCase():'';
+      const matchingNucleus=!!address&&matching[0].nucleo===p.nucleus;
+      const q=String(p.qualification||'').trim().toUpperCase();
+      const role=q==='CT'?'chief':q==='SPEC. INFR.'?'specialist':q==='OSMI'?'preposto':'viewer';
+      return {personId:String(p.id),displayName:name,nucleus:String(p.nucleus||''),team:String(p.team||''),qualification:String(p.qualification||''),email:address,matchingNucleus,suggestedRole:role,needsVerification:!address||!matchingNucleus};
+    });
+    return respond({candidates});
+  }
   if(body.action!=='invite')return respond({error:'Operazione non valida'},400);
   const email=String(body.email||'').trim().toLowerCase();
   const personId=String(body.personId||'').trim();
