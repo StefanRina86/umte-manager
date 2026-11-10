@@ -29,7 +29,8 @@ const start=()=>{
     const c=window.UMTE_CLOUD_CONFIG;
     if(!window.supabase?.createClient||!c?.url||!c?.key)throw Error('Connessione non disponibile');
     const client=window.supabase.createClient(c.url,c.key,{auth:{persistSession:false,autoRefreshToken:false}});
-    const {error}=await client.auth.resetPasswordForEmail(field.value.trim(),{redirectTo:new URL('imposta-password.html',location.href).href});
+    const redirect=location.protocol==='https:'?new URL('imposta-password.html',location.href).href:'https://stefanrina86.github.io/umte-manager/imposta-password.html';
+    const {error}=await client.auth.resetPasswordForEmail(field.value.trim(),{redirectTo:redirect});
     if(error)throw error;
     result.textContent='Richiesta inviata. Controlla la tua casella email e lo spam.';
    }catch(e){result.textContent='Impossibile inviare il link. Verifica l’email e riprova oppure contatta il responsabile.';}
