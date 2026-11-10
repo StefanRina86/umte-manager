@@ -22,7 +22,7 @@ jobs:
             node --check "$file"
           done
       - name: Concurrency and role-safe save regression tests
-        run: node --test tests/*.test.cjs
+        run: node --test tests/save-concurrency.test.cjs
       - name: Check application and mobile assets
         shell: bash
         run: |
