@@ -58,7 +58,7 @@ async function open(){
  if(end<0)throw Error('HTML applicazione incompleto');
  html=html.slice(0,end)+'<style id="umte-v3-mobile">'+umteV3Style+'</style><script id="umte-v3-script">'+umteV3Script+'</script>'+html.slice(end);
  html=html.replace('<script src="essenziale-ui.js"></script>', '<link rel="stylesheet" href="mobile-polish.css?v=20261108c"><script src="mobile-navigation.js?v=20261108c"></script><script src="essenziale-ui.js"></script>');
- html=html.replace('</head>','<link rel="stylesheet" href="guida-rapida.css?v=20261110"></head>');
+ html=html.replace('</head>','<link rel="stylesheet" href="interfaccia-2026.css?v=20261110"><link rel="stylesheet" href="guida-rapida.css?v=20261110"></head>');
  html=html.replace('</body>','<script src="guida-rapida.js?v=20261110" defer></script></body>');
  document.open();document.write(html);document.close();
 }
