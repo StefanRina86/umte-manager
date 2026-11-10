@@ -1,0 +1,22 @@
+:root{color-scheme:light;--ink:#173448;--muted:#5b7180;--teal:#12646c;--outline:#cfdee5;--bg:#edf3f4}
+body{background:radial-gradient(ellipse 850px 540px at 88% -12%,#d3e9e7 0%,transparent 70%),linear-gradient(145deg,#f5f8f8,#e9f0f2);min-height:100vh}
+main#access{box-shadow:0 28px 85px #17344818,0 5px 14px #17344810;border-radius:22px;padding:clamp(20px,4vw,34px);position:relative}
+main#access:before{content:"";display:block;width:44px;height:5px;border-radius:6px;background:#167c7a;margin-bottom:22px}
+main#access h1{font-size:clamp(26px,5vw,34px);letter-spacing:-.035em;line-height:1.1}
+main#access>p:first-of-type{font-weight:600;color:#386477}
+main#access input:focus-visible,main#access button:focus-visible,main#access a:focus-visible{outline:3px solid #70a8d4;outline-offset:2px}
+main#access #enter{background:#134957;box-shadow:0 5px 12px #0c48551c;transition:transform .15s,background .15s}
+main#access #enter:hover:not(:disabled){background:#0c5b65;transform:translateY(-1px)}
+.umte-login-helpers{margin:14px 0 0;display:flex;flex-wrap:wrap;gap:12px;align-items:center;font-size:14px}
+.umte-login-helpers button{margin:0;background:none;border:0;padding:4px 0;color:#0e5868;text-decoration:underline;width:auto;min-height:36px;font-weight:650;box-shadow:none}
+.umte-login-helpers button:hover{color:#063e4b}
+.umte-login-help{margin-top:20px;padding:16px;border:1px solid #cee1e4;border-radius:13px;background:#f7fbfb}
+.umte-login-help h2{font-size:17px;margin:0 0 8px}
+.umte-login-help p,.umte-login-help li{font-size:14px;color:#345568;line-height:1.55}
+.umte-login-help ol{padding-left:22px;margin:8px 0}
+.umte-login-help button{margin-top:10px}
+.umte-login-help[hidden]{display:none}
+.umte-login-help input{margin-top:8px}
+.umte-login-help .umte-reset-feedback{font-weight:650}
+#status{line-height:1.5;min-height:1.5em}
+@media(max-width:500px){body{padding:14px}main#access{margin:4vh auto}.umte-login-helpers{gap:8px}}
