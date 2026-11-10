@@ -18,7 +18,7 @@ if(!window.supabase?.createClient||!config?.url||!config?.key){$('info').textCon
 const cloud=window.supabase.createClient(config.url,config.key,{auth:{storageKey:'umte-manager-auth',persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
 const token=async()=>{const {data,error}=await cloud.auth.getSession();if(error||!data.session)throw Error('Sessione scaduta: accedi di nuovo a UMTE Manager.');return data.session.access_token;};
 const call=async (name,body)=>{const r=await fetch(config.url+'/functions/v1/'+name,{method:'POST',headers:{'Content-Type':'application/json',apikey:config.key,Authorization:'Bearer '+await token()},body:JSON.stringify(body)});let d={};try{d=await r.json();}catch{}if(!r.ok)throw Error(d.error||'Errore HTTP '+r.status);return d;};
-let preparedCandidates=[];let firstInviteSucceeded=false;
+let preparedCandidates=[];
 const load=async()=>{
  const state=await call('umte-manager-api',{action:'state'});
  if(state.user?.role!=='owner')throw Error('Pagina riservata al responsabile.');
@@ -45,7 +45,7 @@ const load=async()=>{
  $('testInvite').disabled=false;
  const eligible=candidates.filter(p=>p.email&&p.matchingNucleus);
  $('bulkInvites').hidden=!eligible.length;
- $('bulkInvites').disabled=!firstInviteSucceeded||!eligible.length;
+ $('bulkInvites').disabled=!eligible.length;
  $('bulkInvites').textContent='Invita in blocco '+eligible.length+' colleghi con email e nucleo corrispondenti';
 };
 $('inviteForm').addEventListener('submit',async e=>{
@@ -56,7 +56,6 @@ $('inviteForm').addEventListener('submit',async e=>{
   if(!body.personId||!body.role||!body.emailVerified)throw Error('Completa e verifica tutti i campi.');
   const result=await call('umte-manager-invites',body);
   $('email').value='';$('role').value='';$('verified').checked=false;
-  firstInviteSucceeded=true;
   await load();
   $('status').textContent=result.message||'Invito inviato';
  }catch(err){$('status').textContent=err.message||String(err);}
@@ -70,7 +69,7 @@ $('testInvite').addEventListener('click',async()=>{
 });
 $('bulkInvites').addEventListener('click',async()=>{
  const selected=preparedCandidates.filter(p=>p.email&&p.matchingNucleus);
- if(!firstInviteSucceeded||!selected.length)return;
+ if(!selected.length)return;
  if(!confirm('Inviare '+selected.length+' inviti individuali agli indirizzi RFI con nome e nucleo corrispondenti? Tutti i profili resteranno disabilitati finché non saranno approvati.'))return;
  const button=$('bulkInvites');button.disabled=true;let sent=0,failed=null;
  for(const p of selected){
@@ -82,7 +81,7 @@ $('bulkInvites').addEventListener('click',async()=>{
  }
  try{await load();}catch(err){failed=(failed?failed+' · ':'')+(err.message||String(err));}
  $('bulkStatus').textContent=sent+' inviti inviati. '+(failed?'Interrotto: '+failed+' Riapri la lista dopo aver risolto il problema.':'Controlla i nuovi profili in Gestisci accessi prima di abilitarli.');
- button.disabled=!firstInviteSucceeded;
+ button.disabled=false;
 });
 try{await load();}catch(err){$('info').textContent=err.message||String(err);}
 });
