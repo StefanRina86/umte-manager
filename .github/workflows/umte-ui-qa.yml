@@ -9,6 +9,11 @@ on:
       - 'tests/**'
       - 'accessi-colleghi.html'
       - 'imposta-password.html'
+      - 'accesso-guidato.js'
+      - 'accesso-guidato.css'
+      - 'guida-rapida.js'
+      - 'guida-rapida.css'
+      - 'interfaccia-2026.css'
       - '.github/workflows/umte-ui-qa.yml'
   workflow_dispatch:
 permissions:
@@ -43,6 +48,12 @@ jobs:
         run: |
           set -o pipefail
           node --test --test-reporter=spec tests/onboarding-layout.test.cjs 2>&1 | tee "${RUNNER_TEMP}/umte-onboarding-test-log.txt"
+      - name: Test novice onboarding and six role guides on phone and desktop
+        if: always()
+        shell: bash
+        run: |
+          set -o pipefail
+          node --test --test-reporter=spec tests/usability-layout.test.cjs 2>&1 | tee "${RUNNER_TEMP}/umte-usability-test-log.txt"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
