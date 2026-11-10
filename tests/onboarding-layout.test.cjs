@@ -26,7 +26,6 @@ window.fetch=async function(url,opts){
   {personId:'TEST-1',displayName:'Person Test',nucleus:'NUCLEO TEST',team:'1',qualification:'CT',email:'test.person@example.invalid',matchingNucleus:true,suggestedRole:'chief',needsVerification:false}
  ]};
  if(request.action==='invite')data={ok:true,message:'Invito inviato (simulazione)'};
- if(request.action==='testInvite')data={ok:true,pending:true,message:'Invito di collaudo simulato (account disabilitato)'};
  return {ok:true,status:200,json:async()=>data};
 };`;
 const passwordMock=`
@@ -66,7 +65,7 @@ for(const width of [390,1440]){
   }finally{await browser.close();}
  });
 }
-test('owner can trigger isolated test invitation without a CID',async()=>{
+test('owner can request a confirmed bulk invite of matching colleague',async()=>{
  const browser=await chromium.launch({headless:true});
  try{
   const page=await browser.newPage({viewport:{width:390,height:850}});
@@ -74,11 +73,11 @@ test('owner can trigger isolated test invitation without a CID',async()=>{
   await page.setContent(pageHtml('accessi-colleghi.html',inviteMock));
   await page.waitForSelector('#inviteForm:not([hidden])');
   page.on('dialog',dialog=>dialog.accept());
-  await page.locator('#testInvite').click();
-  await page.waitForFunction(()=>document.getElementById('testInviteStatus').textContent.includes('Invito di collaudo simulato'));
-  const invited=await page.evaluate(()=>window.calls.filter(x=>x.request.action==='testInvite'));
-  assert.equal(invited.length,1);
-  assert.deepEqual(invited[0].request,{action:'testInvite'});
+  await page.locator('#bulkInvites').click();
+  await page.waitForFunction(()=>document.getElementById('bulkStatus').textContent.includes('1 inviti inviati'));
+  const calls=await page.evaluate(()=>window.calls.filter(x=>x.request.action==='invite'));
+  assert.equal(calls.length,1);
+  assert.deepEqual(calls[0].request,{action:'invite',email:'test.person@example.invalid',personId:'TEST-1',role:'chief',emailVerified:true});
   assert.deepEqual(errors,[]);
  }finally{await browser.close();}
 });
