@@ -1,3 +1,21 @@
+## Stato di rilascio — 10 novembre 2026
+
+UMTE Manager è pubblicato su GitHub Pages, con backend Supabase separato dagli altri moduli RA, Sezionatori e MDO. **La pubblicazione tecnica non equivale all'attivazione di tutti gli account.**
+
+- Nuova schermata di login guidata (`accesso-guidato.js/.css`): primo accesso, mostra password, recupero credenziali.
+- Guida operativa integrata per i sei ruoli (`guida-rapida.js/.css`), con indicazioni specifiche.
+- Rifinitura layout mobile/desktop e messaggi di salvataggio (`interfaccia-2026.css`).
+- Inviti: sorgente sincronizzato con l'Edge Function Supabase `umte-manager-invites` v8. Test email personale rimosso dal prodotto; candidati mostrati soltanto al responsabile. Invio multiplo limitato ai nominativi con nome e nucleo coincidenti, con conferma e interruzione al primo errore.
+- Stato anagrafiche alla verifica: 56 dipendenti, 55 attivi; 54 colleghi da attivare oltre al CUM; 46 corrispondenze con rubrica aziendale e nucleo, 8 richiedono verifica. **Non caricare elenchi o email reali nel repository pubblico.**
+- Test logici: 16/16 salvataggi concorrenti simulati. Funzioni di lettura e aggiornamento provate per ruoli owner, specialist, administrative, chief, preposto e viewer su dati sintetici.
+- Test locali Chromium: 12 aperture dell'applicativo campione (6 ruoli x 390/1440 px), senza errori di pagina e senza overflow, usando una copia locale anonimizzata del frontend. Non equivalgono a sessioni autentiche su Supabase.
+- Test UI GitHub Actions: verifiche browser per turni, inviti, impostazione password e 14 casi aggiuntivi di guida/recupero password. Il risultato dell'esecuzione CI più recente deve essere verificato prima di dichiarare concluso il collaudo.
+- Database: archivio revisione 6, backup verificato coincidente, operatività reale non modificata. API principale `umte-manager-api` v5, inviti v8. Ruoli di squadra limitati ai dati autorizzati via API.
+- Restano necessari: inviti reali e verifica ricezione su `@rfi.it`, approvazioni/associazioni CID, test con utenti autentici e autorizzazione aziendale per dati e hosting. Limiti di posta Supabase possono impedire l'invio massivo; non aggirare protezioni o rate limit.
+
+Per gli inviti il CUM deve accedere con il proprio account a `/accessi-colleghi.html`, verificare i destinatari e confermare la spedizione. I nuovi account rimangono disabilitati fino all'approvazione.
+
+---
 ## Inviti ai colleghi (9 novembre 2026)
 
 - Accesso del responsabile: `/?accessi=1` → **Invita nuovi colleghi**, oppure `/accessi-colleghi.html`.
