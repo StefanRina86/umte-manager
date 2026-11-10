@@ -7,7 +7,7 @@
 <label for="person">Dipendente (CID)</label><select id="person" required></select>
 <label for="email">Email personale verificata</label><input id="email" type="email" autocomplete="email" required maxlength="254" placeholder="nome.cognome@azienda.it">
 <label for="role">Ruolo da assegnare dopo approvazione</label><select id="role" required><option value="">Seleziona il ruolo</option><option value="chief">Capo Tecnico</option><option value="preposto">Operativo / Preposto</option><option value="viewer">Consultazione</option><option value="specialist">Specialista</option><option value="administrative">Amministrativo</option></select>
-<label class="inline"><input id="verified" type="checkbox" required><span>Confermo che questa email appartiene al collega selezionato e che l'accesso è autorizzato.</span></label>
+<p id="roleInfo" style="padding:10px 12px;border-radius:9px;background:#eef6f7;color:#315565;font-size:14px" role="note">Seleziona un ruolo per vedere i permessi.</p><label class="inline"><input id="verified" type="checkbox" required><span>Confermo che questa email appartiene al collega selezionato e che l'accesso è autorizzato.</span></label>
 <button id="send" type="submit">Invia invito personale</button><p id="status" role="status" aria-live="polite"></p>
 </fieldset></form><p id="summary"></p><button id="bulkInvites" type="button" hidden disabled>Invita colleghi verificati in blocco</button><p id="bulkStatus" role="status" aria-live="polite"></p><small>Gli account non possono essere condivisi. Non utilizzare indirizzi generici o password comuni. Non inserire i dati del personale in repository pubblici.</small></main>
 <script>
@@ -25,6 +25,16 @@ const load=async()=>{
  const roster=await call('umte-manager-invites',{action:'candidates'});
  const candidates=roster.candidates||[];
  preparedCandidates=candidates;
+ const roleExplanation={
+  specialist:'Specialista: programma le attività, gestisce turni e richieste, approva dove autorizzato.',
+  administrative:'Amministrativo: inserisce e aggiorna i dati di competenza, senza approvare le richieste.',
+  chief:'Capo Tecnico: gestisce rapportini e attività della squadra, senza accesso ai dati delle altre squadre.',
+  preposto:'Operatore/Preposto: consulta il programma, compila i propri rapportini e segnala le necessità.',
+  viewer:'Consultazione: può leggere soltanto turni e attività previste dal suo profilo.'
+ };
+ const updateRoleInfo=()=>{$('roleInfo').textContent=roleExplanation[$('role').value]||'Seleziona un ruolo per conoscere le operazioni abilitate.';};
+ $('role').onchange=updateRoleInfo;
+
  const select=$('person');select.replaceChildren(new Option('Seleziona un dipendente',''));
  for(const p of candidates)select.add(new Option([p.displayName,p.nucleus,p.team?'Squadra '+p.team:'',p.email?'Email disponibile':'Email da indicare'].filter(Boolean).join(' · '),String(p.personId)));
  const byCid=new Map(candidates.map(p=>[String(p.personId),p]));
@@ -33,6 +43,7 @@ const load=async()=>{
    $('email').value=entry?.email||'';
    $('role').value=entry?.suggestedRole||'';
    $('verified').checked=false;
+   updateRoleInfo();
    $('status').textContent=entry?(entry.needsVerification?'Verifica nominativo, nucleo ed email prima dell’invito.':'Email proposta dalla rubrica interna; conferma che appartenga al dipendente prima di inviare.'):'';
  };
  select.onchange=showCandidate;
