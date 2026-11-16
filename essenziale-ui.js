@@ -5,7 +5,7 @@ document.head.append(css);
 const off=node=>{if(node)node.dataset.essentialOff='1';};
 ['dossiers','matApp'].forEach(id=>off(document.querySelector('.nav-item[data-view="'+id+'"]')));
 const nav=[...document.querySelectorAll('.nav-item')].filter(n=>!n.dataset.essentialOff);nav.forEach((n,i)=>{const number=n.querySelector('span');if(number)number.textContent=String(i+1).padStart(2,'0');});
-['activityDocuments','odlRows','activityAnomalyCandidates','diaryUsedMaterials','diaryRemovedMaterials'].forEach(id=>off(document.getElementById(id)?.closest('fieldset')));
+['activityDocuments','odlRows','activityAnomalyCandidates'].forEach(id=>off(document.getElementById(id)?.closest('fieldset')));
 ['activitySource','activityReference'].forEach(id=>off(document.getElementById(id)?.closest('label')));
 off(document.querySelector('#activities .activity-rule'));off(document.getElementById('activityHoursCount')?.closest('article')); 
 off(document.getElementById('adminArea')?.querySelector('option[value="odl"]'));
