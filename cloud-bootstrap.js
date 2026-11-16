@@ -11,10 +11,38 @@ exit.onclick=window.UMTECloudLogout;
 window.fetch=async(input,options={})=>{const value=typeof input==='string'?input:input instanceof URL?input.href:input.url,url=new URL(value,location.href);if(url.origin===location.origin&&['/api/state','/api/members'].includes(url.pathname)){const body=options.body?JSON.parse(options.body):{};return api({action:url.pathname==='/api/members'?'members':options.method==='POST'?'save':'state',...(url.pathname==='/api/members'&&options.method==='POST'?{update:body}:body)});}return nativeFetch(input,options);};
 function report(error){status.textContent=error.message||String(error);exit.hidden=false;form.hidden=false;}
 async function accessManager(payload){
- document.querySelector('main').replaceChildren();const main=document.querySelector('main'),title=document.createElement('h1');title.textContent='Accessi personali';main.append(title);main.style.maxWidth='900px';
- const back=document.createElement('a');back.href='./';back.textContent='Torna al gestionale';main.append(back);const invitations=document.createElement('p'),inviteLink=document.createElement('a');inviteLink.href='./accessi-colleghi.html';inviteLink.textContent='Invita nuovi colleghi';invitations.append(inviteLink);main.append(invitations);
- const result=await api({action:'members'}),body=await result.json();if(!result.ok)throw Error(body.error);
- for(const u of body.members){const row=document.createElement('section'),name=document.createElement('p');name.textContent=u.name+' · '+u.email;row.append(name);if(u.role!=='owner'){const role=document.createElement('select');for(const [v,t]of [['pending','In attesa'],['specialist','Specialista'],['administrative','Amministrativo'],['chief','Capo Tecnico'],['preposto','Preposto'],['viewer','Consultazione']])role.add(new Option(t,v));role.value=u.role;const person=document.createElement('select');person.add(new Option('Associa CID',''));for(const p of payload.data.peopleRecords.filter(p=>p.active!==false))person.add(new Option(p.displayName+' · '+p.id,p.id));person.value=u.person_id||'';const enabled=document.createElement('input');enabled.type='checkbox';enabled.checked=!!u.enabled;const label=document.createElement('label');label.append(enabled,' Abilitato');const button=document.createElement('button'),message=document.createElement('p');button.textContent='Salva profilo';button.onclick=async()=>{try{const r=await api({action:'members',update:{userId:u.user_id,role:role.value,personId:person.value,enabled:enabled.checked}}),v=await r.json();message.textContent=r.ok?'Profilo aggiornato':v.error;}catch{message.textContent='Salvataggio non riuscito';}};row.append(role,person,label,button,message);}else{const p=document.createElement('p');p.textContent='Responsabile';row.append(p);}main.append(row);}
+ const main=document.querySelector('main');main.replaceChildren();main.style.maxWidth='1000px';
+ const title=document.createElement('h1');title.textContent='Gestione accessi e abilitazioni';main.append(title);
+ const intro=document.createElement('p');intro.textContent='Qui puoi vedere gli utenti già registrati, abilitarli o disabilitarli, cambiare ruolo e associare il CID. Gli inviti si gestiscono nella pagina separata.';main.append(intro);
+ const nav=document.createElement('nav');nav.style.cssText='display:flex;flex-wrap:wrap;gap:12px;margin:16px 0';
+ for(const [href,txt] of [['./','Torna al gestionale'],['./accessi-colleghi.html','Invita nuovi colleghi']]){const link=document.createElement('a');link.href=href;link.textContent=txt;link.style.cssText='display:inline-block;padding:12px;background:#eaf4f7;border:1px solid #b9ccd3;border-radius:8px;color:#103548;font-weight:700';nav.append(link);}main.append(nav);
+ const result=await api({action:'members'});const body=await result.json();if(!result.ok)throw Error(body.error||'Impossibile recuperare gli utenti');
+ const members=Array.isArray(body.members)?body.members:[];
+ const counter=document.createElement('p');counter.setAttribute('role','status');main.append(counter);
+ const search=document.createElement('input');search.type='search';search.placeholder='Cerca nome, email o CID';search.setAttribute('aria-label','Cerca utenti');main.append(search);
+ const filter=document.createElement('select');filter.setAttribute('aria-label','Filtra stato');
+ for(const [value,label] of [['all','Tutti gli utenti'],['enabled','Abilitati'],['disabled','Da abilitare / disabilitati']])filter.add(new Option(label,value));
+ filter.style.marginTop='8px';main.append(filter);
+ const list=document.createElement('div');list.style.cssText='display:grid;gap:12px;margin-top:18px';main.append(list);
+ const people=Array.isArray(payload.data?.peopleRecords)?payload.data.peopleRecords.filter(p=>p.active!==false):[];
+ function render(){
+  list.replaceChildren();
+  const q=search.value.trim().toLocaleLowerCase('it');const matching=members.filter(u=>(filter.value==='all'||(filter.value==='enabled')===!!u.enabled)&&(!q||[u.name,u.email,u.person_id].some(v=>String(v||'').toLocaleLowerCase('it').includes(q))));
+  counter.textContent=members.length+' account registrati · '+members.filter(u=>u.enabled).length+' abilitati · '+members.filter(u=>!u.enabled).length+' non abilitati · '+matching.length+' visualizzati';
+  if(!matching.length){const none=document.createElement('p');none.textContent='Nessun utente corrisponde ai filtri.';list.append(none);}
+  for(const u of matching){
+   const row=document.createElement('section');row.style.cssText='border:1px solid #d2e2e8;border-radius:12px;padding:15px;background:#f8fbfc';
+   const name=document.createElement('p');name.style.fontWeight='700';name.style.overflowWrap='anywhere';name.textContent=(u.name||'Utente')+' · '+(u.email||'Email non disponibile');row.append(name);
+   if(u.role==='owner'){const p=document.createElement('p');p.textContent='Responsabile · account principale';row.append(p);list.append(row);continue;}
+   const roleLabel=document.createElement('label');roleLabel.textContent='Ruolo';const role=document.createElement('select');for(const [v,t]of [['pending','In attesa'],['specialist','Specialista'],['administrative','Amministrativo'],['chief','Capo Tecnico'],['preposto','Operatore / Preposto'],['viewer','Consultazione']])role.add(new Option(t,v));role.value=u.role;roleLabel.append(role);
+   const personLabel=document.createElement('label');personLabel.textContent='Associazione dipendente (CID)';const person=document.createElement('select');person.add(new Option('Nessun CID associato',''));for(const p of people)person.add(new Option(p.displayName+' · '+p.id,p.id));person.value=u.person_id||'';personLabel.append(person);
+   const enabled=document.createElement('input');enabled.type='checkbox';enabled.checked=!!u.enabled;enabled.style.cssText='width:20px;height:20px;min-height:20px;margin:0 8px 0 0';const label=document.createElement('label');label.style.cssText='display:flex;align-items:center;margin:12px 0';label.append(enabled,' Accesso abilitato');
+   const button=document.createElement('button'),message=document.createElement('p');button.textContent='Salva modifiche';button.type='button';message.setAttribute('role','status');message.style.marginBottom='0';
+   button.onclick=async()=>{if(enabled.checked&&(!person.value||role.value==='pending')){message.textContent='Per abilitare, associa un CID e seleziona un ruolo operativo.';return;}button.disabled=true;message.textContent='Salvataggio in corso…';try{const r=await api({action:'members',update:{userId:u.user_id,role:role.value,personId:person.value,enabled:enabled.checked}}),v=await r.json();if(!r.ok)throw Error(v.error||'Errore aggiornamento');u.role=role.value;u.person_id=person.value;u.enabled=enabled.checked;message.textContent='Profilo aggiornato correttamente';counter.textContent=members.length+' account registrati · '+members.filter(u=>u.enabled).length+' abilitati · '+members.filter(u=>!u.enabled).length+' non abilitati';}catch(e){message.textContent=e.message||'Salvataggio non riuscito';}finally{button.disabled=false;}};
+   row.append(roleLabel,personLabel,label,button,message);list.append(row);
+  }
+ }
+ search.addEventListener('input',render);filter.addEventListener('change',render);render();
 }
 async function initialize(){
  form.hidden=true;status.textContent='Importa il backup esportato dal gestionale e il file baseline.json del pacchetto privato. L’importazione iniziale può avvenire una sola volta.';
