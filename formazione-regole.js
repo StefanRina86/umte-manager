@@ -28,7 +28,7 @@
       if(!complete){if(old?.verifiedAt)throw new Error('Il corso è già convalidato: correggere prima la convalida con il responsabile.');continue;}
       const diaryIds=sessions.map(d=>d.id),fingerprint=JSON.stringify(sessions.map(d=>[d.id,d.updatedAt||d.createdAt,d.trainingAttendance]));
       if(old?.verifiedAt&&old.fingerprint!==fingerprint)throw new Error('La partecipazione è già convalidata: il TE-D non può modificarne i dati formativi.');
-      const date=sessions.map(d=>d.date).sort().at(-1),hours=sessions.reduce((n,d)=>{const t=d.trainingAttendance;return n+Math.max(0,((+t.end.slice(0,2)*60+ +t.end.slice(3))-(+t.start.slice(0,2)*60+ +t.start.slice(3)))/60);},0);
+      const date=sessions.map(d=>d.date).sort().at(-1),hours=sessions.reduce((n,d)=>{const t=d.trainingAttendance;const gross=Math.max(0,(+t.end.slice(0,2)*60+ +t.end.slice(3))-(+t.start.slice(0,2)*60+ +t.start.slice(3)));return n+Math.max(0,gross-(gross>300?60:0))/60;},0);
       result.push({...old,id:`TC-${event.id}-${personId}`,personId:String(personId),eventId:event.id,catalogId:event.catalogId||'',title:event.title,from:dates[0],to:date,hours,outcome:old?.verifiedAt?'Svolgimento convalidato':'Partecipazione dichiarata nel TE-D',kind:'Corso',method:'TE-D',venue:event.location||'',categories:item?.categories||[],sourceFile:'TE-D collegati: '+diaryIds.join(', '),diaryIds,fingerprint,target:event.renewalTarget||'',proposedExpiry:event.renewalVerified&&event.renewalMonths?addMonths(date,+event.renewalMonths):'',createdAt:old?.createdAt||now,createdBy:old?.createdBy||by,updatedAt:now});
     }
     state.trainingCompletions=result;return result.filter(c=>c.eventId===event.id);
