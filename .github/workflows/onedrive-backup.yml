@@ -1,0 +1,72 @@
+name: Backup Supabase to OneDrive (encrypted)
+
+# Preparazione: solo esecuzione manuale su ramo di test.
+# Abilitare schedule solo dopo prova reale e verifica del ripristino.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: umte-onedrive-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      RCLONE_CONFIG_B64: ${{ secrets.RCLONE_CONFIG_B64 }}
+      RCLONE_CONFIG_PASS: ${{ secrets.RCLONE_CONFIG_PASS }}
+    steps:
+      - name: Verify prerequisites
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$SUPABASE_DB_URL" || { echo "Missing SUPABASE_DB_URL"; exit 1; }
+          test -n "$RCLONE_CONFIG_B64" || { echo "Missing RCLONE_CONFIG_B64"; exit 1; }
+          test -n "$RCLONE_CONFIG_PASS" || { echo "Missing RCLONE_CONFIG_PASS"; exit 1; }
+          echo "::add-mask::$SUPABASE_DB_URL"
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Install rclone
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq rclone
+      - name: Create temporary config
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          mkdir -p "$RUNNER_TEMP/umte-backup"
+          printf '%s' "$RCLONE_CONFIG_B64" | base64 -d > "$RUNNER_TEMP/umte-backup/rclone.conf"
+          echo "RCLONE_CONFIG=$RUNNER_TEMP/umte-backup/rclone.conf" >> "$GITHUB_ENV"
+      - name: Dump Supabase database
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/umte-backup"
+          supabase db dump --db-url "$SUPABASE_DB_URL" -f roles.sql --role-only
+          supabase db dump --db-url "$SUPABASE_DB_URL" -f schema.sql
+          supabase db dump --db-url "$SUPABASE_DB_URL" -f data.sql --data-only --use-copy
+          for file in roles.sql schema.sql data.sql; do test -s "$file"; done
+          sha256sum roles.sql schema.sql data.sql > SHA256SUMS
+          tar -czf "supabase-${GITHUB_RUN_ID}.tar.gz" roles.sql schema.sql data.sql SHA256SUMS
+          test -s "supabase-${GITHUB_RUN_ID}.tar.gz"
+      - name: Upload through encrypted rclone remote
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/umte-backup"
+          # umtecrypt must be an rclone crypt remote pointing to OneDrive.
+          rclone listremotes | grep -Fxq 'umtecrypt:'
+          stamp="$(date -u +%Y-%m-%dT%H-%M-%SZ)"
+          destination="umtecrypt:UMTE-Backup/Giornalieri/${stamp}-run-${GITHUB_RUN_ID}.tar.gz"
+          rclone copyto "supabase-${GITHUB_RUN_ID}.tar.gz" "$destination" --retries 3 --checkers 2 --transfers 1
+          rclone check "supabase-${GITHUB_RUN_ID}.tar.gz" "$destination" --download
+          echo "Backup uploaded and verified."
+      - name: Cleanup temporary backup and config
+        if: always()
+        shell: bash
+        run: rm -rf "$RUNNER_TEMP/umte-backup"
