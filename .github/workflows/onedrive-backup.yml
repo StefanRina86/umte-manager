@@ -64,7 +64,9 @@ jobs:
           stamp="$(date -u +%Y-%m-%dT%H-%M-%SZ)"
           destination="umtecrypt:UMTE-Backup/Giornalieri/${stamp}-run-${GITHUB_RUN_ID}.tar.gz"
           rclone copyto "supabase-${GITHUB_RUN_ID}.tar.gz" "$destination" --retries 3 --checkers 2 --transfers 1
-          rclone check "supabase-${GITHUB_RUN_ID}.tar.gz" "$destination" --download
+          local_sha="$(sha256sum "supabase-${GITHUB_RUN_ID}.tar.gz" | cut -d " " -f1)"
+          remote_sha="$(rclone cat "$destination" | sha256sum | cut -d " " -f1)"
+          test "$local_sha" = "$remote_sha"
           echo "Backup uploaded and verified."
       - name: Cleanup temporary backup and config
         if: always()
