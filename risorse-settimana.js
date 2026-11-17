@@ -5,8 +5,8 @@ function matrix(ctx,people,dates,filters={}){
  for(const p of people){if(p.active===false)continue;if(filters.nucleus&&p.nucleus!==filters.nucleus||filters.team&&String(p.team||'')!==filters.team||filters.person&&String(p.id)!==filters.person)continue;
  for(const date of dates){const unique=String(p.id)+'|'+date;if(seen.has(unique))continue;seen.add(unique);const r=ctx.record(p.id,date);if(!r)continue;const code=r.effective,b=ctx.shiftBounds(date,code,r.actualStart,r.actualEnd);if(!b||filters.shift&&code!==filters.shift)continue;
  const start=clock(b.start),end=clock(b.end),previous=b.start.getDate()!==b.end.getDate()&&code==='N',key=JSON.stringify([p.nucleus,code,start,end,previous]);
- if(!rows.has(key))rows.set(key,{nucleus:p.nucleus,code,start,end,previous,cells:dates.map(date=>({date,present:0,occupied:0,free:0}))});
- const cell=rows.get(key).cells[dates.indexOf(date)];cell.present++;const available=ctx.check(p.id,{date,shiftCode:code,start,end}).available;if(available)cell.free++;else cell.occupied++;
+ if(!rows.has(key))rows.set(key,{nucleus:p.nucleus,code,start,end,previous,cells:dates.map(date=>({date,present:0,occupied:0,free:0,inActivity:0,otherOccupied:0}))});
+ const cell=rows.get(key).cells[dates.indexOf(date)];cell.present++;const check=ctx.check(p.id,{date,shiftCode:code,start,end});if(check.available)cell.free++;else{cell.occupied++;if((check.conflicts||[]).some(c=>c.kind==='activity'))cell.inActivity++;else cell.otherOccupied++;}
  }}return [...rows.values()].filter(r=>!filters.availableOnly||r.cells.some(c=>c.free)).sort((a,b)=>a.nucleus.localeCompare(b.nucleus,'it')||a.start.localeCompare(b.start)||a.code.localeCompare(b.code));
 }
 function selection(ctx,people,slot){
