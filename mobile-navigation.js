@@ -22,6 +22,17 @@ function init(){
   if(nav.hidden||getComputedStyle(nav).display==="none"||nav.getAttribute("aria-disabled")==="true")return null;
   return nav;
  }
+ function syncVisibleButtons(){
+  for(const [key,target] of Object.entries(map)){
+   const button=root.querySelector('[data-mobile-go="'+key+'"]');
+   if(!button)continue;
+   const permitted=Boolean(authorizedButton(target));
+   button.hidden=!permitted;button.style.display=permitted?'':'none';
+   button.disabled=!permitted;
+  }
+ }
+ syncVisibleButtons();
+ document.addEventListener('umte-render',syncVisibleButtons);
  function openOther(){
   document.getElementById("umte-mobile-sheet")?.remove();
   const overlay=document.createElement("div");
