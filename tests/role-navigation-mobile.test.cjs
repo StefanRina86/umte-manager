@@ -18,7 +18,7 @@ for(const [role,perms] of Object.entries(roles))for(const width of [390,1440]){
   try{
    const page=await browser.newPage({viewport:{width,height:900}});
    const errors=[];page.on('pageerror',e=>errors.push(String(e)));
-   const html='<html><head><meta name="viewport" content="width=device-width, initial-scale=1"><style>*{box-sizing:border-box}body{margin:0;font:16px Arial}.topbar{padding:6px}.nav-item[hidden]{display:none} .umte-mobilebar{display:flex;justify-content:space-around;gap:5px;padding:8px;position:fixed;bottom:0;background:white;width:100%}.umte-mobilebar button{min-width:0;flex:1;border:1px solid #ccc;padding:7px 2px;font-size:12px}#dashboard{padding:12px}#requests{padding:12px}</style></head><body><header class="topbar">UMTE</header><nav id="nav">'+
+   const html='<html><head><meta name="viewport" content="width=device-width, initial-scale=1"><style>*{box-sizing:border-box}body{margin:0;font:16px Arial}.topbar{padding:6px}.nav-item[hidden]{display:none} .umte-mobilebar{display:flex;justify-content:space-around;gap:5px;padding:8px;position:fixed;bottom:0;background:white;width:100%}.umte-mobilebar button{min-width:0;flex:1;border:1px solid #ccc;padding:7px 2px;font-size:12px}@media(min-width:821px){.umte-mobilebar{display:none}}#dashboard{padding:12px}#requests{padding:12px}</style></head><body><header class="topbar">UMTE</header><nav id="nav">'+
     [["dashboard","viewDashboard"],["shifts","viewShifts"],["activities","viewActivities"],["competencies","viewCompetencies"],["reports","viewReports"],["requests","viewShifts"],["administration","adminManage"]].map(([view,perm])=>'<button class="nav-item" data-view="'+view+'" data-permission="'+perm+'">'+view+'</button>').join('')+
     '</nav><section id="dashboard"><div class="page-heading">Home</div></section><section id="shifts"></section><section id="activities"><div class="activity-rule"></div></section><section id="competencies"></section><section id="people"></section><section id="personnelEvents"></section><section id="reports"></section><section id="requests"></section><section id="administration"><select id="adminArea"><option value="odl">ODL</option></select></section><div class="umte-mobilebar"><button data-mobile-go="dashboard">Oggi</button><button data-mobile-go="turni">Turni</button><button data-mobile-go="attivita">Attività</button><button data-mobile-go="rapportini">Rapportini</button><button data-mobile-go="altro">Altro</button></div></body></html>';
    await page.setContent(html);
@@ -37,12 +37,17 @@ for(const [role,perms] of Object.entries(roles))for(const width of [390,1440]){
    else assert.equal(await page.getByRole('button',{name:'Apri presenze'}).count(),1);
    assert.equal(await page.locator('.nav-item[data-view="administration"]').isVisible(),perms.includes('adminManage'));
    assert.equal(await page.locator('.nav-item[data-view="requests"]').isVisible(),true);
-   await page.locator('[data-mobile-go="altro"]').click();
-   const sheet=page.locator('#umte-mobile-sheet');
-   assert.equal(await sheet.isVisible(),true);
-   assert.equal(await sheet.getByRole('button',{name:'Segnalazioni e richieste'}).count(),1);
-   assert.equal(await sheet.getByRole('button',{name:'Amministrazione'}).count(),perms.includes('adminManage')?1:0);
-   await sheet.getByRole('button',{name:'Segnalazioni e richieste'}).click();
+   if(width<=820){
+    await page.locator('[data-mobile-go="altro"]').click();
+    const sheet=page.locator('#umte-mobile-sheet');
+    assert.equal(await sheet.isVisible(),true);
+    assert.equal(await sheet.getByRole('button',{name:'Segnalazioni e richieste'}).count(),1);
+    assert.equal(await sheet.getByRole('button',{name:'Amministrazione'}).count(),perms.includes('adminManage')?1:0);
+    await sheet.getByRole('button',{name:'Segnalazioni e richieste'}).click();
+   }else{
+    assert.equal(await page.locator('.umte-mobilebar').isVisible(),false);
+    await page.locator('.nav-item[data-view="requests"]').click();
+   }
    assert.equal(await page.evaluate(()=>document.body.dataset.currentView),'requests');
    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),'Overflow on '+role+' '+width);
    assert.deepEqual(errors,[]);
