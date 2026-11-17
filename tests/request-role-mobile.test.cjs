@@ -11,7 +11,7 @@ for(const role of roles)for(const width of [390,1440]){
   try{
    const page=await browser.newPage({viewport:{width,height:900}});
    const errors=[];page.on('pageerror',e=>errors.push(String(e)));
-   await page.setContent('<!doctype html><html lang="it"><head><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;font:16px Arial"><nav><button class="nav-item" data-view="requests">Segnalazioni</button></nav><section id="dashboard"><div class="page-heading">Home</div></section><section id="requests"></section><span id="requestNavCount"></span></body></html>');
+   await page.route('https://synthetic.invalid/**',route=>route.fulfill({contentType:'text/html',body:'<!doctype html><html lang="it"><head><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;font:16px Arial"><nav><button class="nav-item" data-view="requests">Segnalazioni</button></nav><section id="dashboard"><div class="page-heading">Home</div></section><section id="requests"></section><span id="requestNavCount"></span></body></html>'}));await page.goto('https://synthetic.invalid/');
    await page.evaluate(({role})=>{
     window.UMTE_SHARED={user:{id:role==='owner'?'boss':'u-test',role,personId:'TEST-CID',name:'Persona Test'}};
     window.__logs=[];
