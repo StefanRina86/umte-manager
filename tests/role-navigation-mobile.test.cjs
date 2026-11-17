@@ -38,6 +38,10 @@ for(const [role,perms] of Object.entries(roles))for(const width of [390,1440]){
    assert.equal(await page.locator('.nav-item[data-view="administration"]').isVisible(),perms.includes('adminManage'));
    assert.equal(await page.locator('.nav-item[data-view="requests"]').isVisible(),true);
    if(width<=820){
+    assert.equal(await page.locator('[data-mobile-go="dashboard"]').isVisible(),perms.includes('viewDashboard'));
+    assert.equal(await page.locator('[data-mobile-go="rapportini"]').isVisible(),perms.includes('viewReports'));
+    assert.equal(await page.locator('[data-mobile-go="turni"]').isVisible(),true);
+
     await page.locator('[data-mobile-go="altro"]').click();
     const sheet=page.locator('#umte-mobile-sheet');
     assert.equal(await sheet.isVisible(),true);
