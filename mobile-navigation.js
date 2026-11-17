@@ -63,6 +63,8 @@ function init(){
   overlay.addEventListener("keydown",e=>{if(e.key==="Escape")hide();});
   close.focus();
  }
+ const hamburger=document.getElementById('umte-mobile-menu')||document.querySelector('.topbar [aria-label="Apri menu"],.topbar .menu-toggle');
+ if(hamburger){hamburger.style.cursor='pointer';hamburger.setAttribute('aria-label','Apri menu delle funzioni');hamburger.addEventListener('click',event=>{event.preventDefault();event.stopImmediatePropagation();openOther();},true);}
  root.addEventListener("click",function(e){
   const button=e.target.closest("[data-mobile-go]");
   if(!button)return;
