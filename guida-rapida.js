@@ -12,7 +12,7 @@ function init(){
  administrative:['Gestisci gli inserimenti autorizzati e controlla la correttezza dei riferimenti.','Verifica lo stato di attività e rapportini senza modificare le approvazioni riservate ai responsabili.'],
  chief:['Controlla il programma e i turni della tua squadra.','Compila il rapportino dell’attività assegnata, verifica la data e salva.','Se un dato non è di tua competenza, chiedi allo specialista o al responsabile.'],
  preposto:['Consulta le attività assegnate alla tua squadra.','Compila il rapportino dove previsto, controllando giornata, orari e personale.','Non condividere la password e non inserire dati per attività non assegnate.'],
- viewer:['Consulta i turni e le attività disponibili per il tuo profilo.','Se devi segnalare una correzione, contatta il Capo Tecnico o il responsabile.']
+ viewer:['Consulta i turni e le attività disponibili per il tuo profilo.','Puoi inviare segnalazioni operative e leggere soltanto le tue richieste e le risposte del responsabile.']
  };
  const open=document.createElement('button');open.type='button';open.className='umte-guide-launch';open.id='umteGuideLaunch';open.textContent='?  Guida rapida';open.setAttribute('aria-controls','umteGuidePanel');open.setAttribute('aria-expanded','false');
  const box=document.createElement('aside');box.className='umte-guide-panel';box.id='umteGuidePanel';box.hidden=true;box.setAttribute('role','dialog');box.setAttribute('aria-label','Guida rapida del gestionale');
