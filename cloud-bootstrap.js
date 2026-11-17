@@ -88,7 +88,7 @@ async function open(){
  const end=html.lastIndexOf('</body>');
  if(end<0)throw Error('HTML applicazione incompleto');
  html=html.slice(0,end)+'<style id="umte-v3-mobile">'+umteV3Style+'</style><script id="umte-v3-script">'+umteV3Script+'</script>'+html.slice(end);
- html=html.replace('<script src="essenziale-ui.js"></script>', '<link rel="stylesheet" href="mobile-polish.css?v=20261108c"><script src="mobile-navigation.js?v=20261108c"></script><script src="essenziale-ui.js"></script>');
+ html=html.replace('<script src="essenziale-ui.js"></script>', '<link rel="stylesheet" href="mobile-polish.css?v=20261108c"><script src="mobile-navigation.js?v=role-20261117"></script><script src="essenziale-ui.js"></script>');
  html=html.replace('</head>','<link rel="stylesheet" href="interfaccia-2026.css?v=20261110"><link rel="stylesheet" href="guida-rapida.css?v=20261110"></head>');
  html=html.replace('<script src="essenziale-ui.js"></script>','<script src="essenziale-ui.js?v=privacy-20261117"></script>');
  // Insert at the actual document closing tag, never inside a JavaScript template containing </body>.
