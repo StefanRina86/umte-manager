@@ -766,9 +766,10 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   function alignVentottinaStart(dateString){return ventottinaStartAt(dateString);}
   function cycleWeekdaysFor(){return['Lun','Mar','Mer','Gio','Ven','Sab','Dom'];}
   function currentCycleReference(nucleus,targetStart){
+    ensureShiftData();
     const before=ventottinaAddDays(targetStart,-28),first=source.people.find(p=>p.nucleus===nucleus&&p.active!==false&&(String(p.rotation||'').toUpperCase()==='A'||String(p.team||'')==='1'))||source.people.find(p=>p.nucleus===nucleus&&p.active!==false);
     if(!first)return{codes:[],name:'Nessun dipendente disponibile per questo nucleo',start:before};
-    const codes=Array.from({length:28},(_,i)=>{const date=ventottinaAddDays(before,i),record=sourceAllShifts.find(x=>String(x.personId)===String(first.id)&&x.date===date);return record?theoreticalPlanned(record):'';});
+    const codes=Array.from({length:28},(_,i)=>{const date=ventottinaAddDays(before,i),record=sourceAllShifts.find(x=>String(x.personId)===String(first.id)&&x.date===date);if(record)return theoreticalPlanned(record);const prior=state.theoreticalRules.filter(r=>r.mode==='nucleus28'&&r.active!==false&&r.nucleus===nucleus&&r.effectiveFrom<=date).sort((a,b)=>b.effectiveFrom.localeCompare(a.effectiveFrom))[0];if(prior?.sequence?.length===28){const step=Math.round((parseDate(date)-parseDate(prior.effectiveFrom))/ventottinaMs),rotation=rotationOffsets[String(first.rotation||'').toUpperCase()]||0;return prior.sequence[((step+rotation)%28+28)%28]||'';}return'';});
     return{codes,name:first.displayName,start:before};
   }
   function refreshCurrentCycle(){
