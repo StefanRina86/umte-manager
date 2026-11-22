@@ -2,7 +2,7 @@
 <style>*{box-sizing:border-box}body{margin:0;background:#eff4f6;color:#153a4b;font:16px system-ui}main{max-width:850px;margin:20px auto;padding:22px;background:white;border:1px solid #cad9df;border-radius:16px}h1{font-size:1.45rem}a{color:#126d92}label{display:grid;gap:8px;margin:16px 0;font-weight:600}select,input,button{font:inherit;padding:11px 12px;border:1px solid #b4cbd4;border-radius:8px;min-height:44px;width:100%}button{background:#123b51;color:white;font-weight:700;cursor:pointer}button:disabled{opacity:.55;cursor:not-allowed}p{line-height:1.5}.note{padding:13px;background:#edf5f7;border-radius:9px}.warning{padding:13px;background:#fff2e5;border-radius:9px}.check{display:flex;align-items:flex-start;gap:9px;font-size:.95rem;font-weight:450}.check input{width:20px;min-height:20px;height:20px;flex:none}#result{background:#e4f5ee;padding:16px;border-radius:10px;margin-top:18px}#result[hidden],#panel[hidden]{display:none}#password{font-size:1.25rem;letter-spacing:.06em;overflow-wrap:anywhere}#status{white-space:pre-wrap;font-weight:650}small{color:#526a77}code{overflow-wrap:anywhere}</style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" defer></script><script src="config.js?v=security-20261105" defer></script></head>
 <body><main><p><a href="./?accessi=1">← Gestione accessi</a> · <a href="./">Gestionale</a></p><h1>Creazione accessi personali senza email</h1>
-<p class="note">Solo il responsabile può creare un account. Ogni collega avrà l’email come username e una <strong>password casuale individuale</strong>. Non useremo il CID come password. Nessuna email verrà inviata.</p>
+<p class="note">Solo il responsabile può creare un account. Ogni nuovo collega avrà l’email come username e il <strong>CID come password iniziale</strong>. Nessuna email verrà inviata.</p>
 <div id="status" role="status" aria-live="polite">Verifica accesso...</div>
 <section id="panel" hidden><label for="person">Dipendente<select id="person"><option value="">Seleziona...</option></select></label>
 <label for="email">Indirizzo email individuale<input id="email" type="email" autocomplete="off" required></label>
@@ -11,9 +11,9 @@
 <label class="check"><input type="checkbox" id="verified"><span>Confermo di aver verificato il collega, il relativo indirizzo email e l'autorizzazione all'accesso.</span></label>
 <label class="check" id="manualWrapper" hidden><input type="checkbox" id="manual"><span>L'indirizzo non è presente nella rubrica verificata. Ho controllato personalmente che appartenga al collega.</span></label>
 <button type="button" id="create">Crea account e genera password</button>
-<p class="warning">Non usare password comuni o CID. Consegna la password privatamente al destinatario e raccomanda di cambiarla al primo accesso. Non salvare elenchi di password in cartelle condivise.</p>
+<p class="warning">Il CID è una password facilmente prevedibile: consiglia al collega di modificarla appena possibile. Non condividere elenchi di credenziali in cartelle comuni.</p>
 </section>
-<section id="result" hidden><h2>Account creato</h2><p id="resultName"></p><p>Password iniziale (visibile soltanto ora):</p><p><strong id="password"></strong></p><button id="copy" type="button">Copia la password</button><p><small>Chiudi questa schermata dopo la consegna. Non viene creata una lista di password conservate nel sito.</small></p><button id="next" type="button">Crea il prossimo accesso</button></section>
+<section id="result" hidden><h2>Account creato</h2><p id="resultName"></p><p>Password iniziale (CID del dipendente):</p><p><strong id="password"></strong></p><button id="copy" type="button">Copia la password</button><p><small>Chiudi questa schermata dopo la consegna. La password iniziale è il CID del dipendente. Non vengono creati elenchi di password sul sito.</small></p><button id="next" type="button">Crea il prossimo accesso</button></section>
 </main><script>
 window.addEventListener('DOMContentLoaded',async()=>{
  const $=id=>document.getElementById(id),cfg=window.UMTE_CLOUD_CONFIG;
