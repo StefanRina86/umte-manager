@@ -9,7 +9,7 @@ window.UMTECloudApi=api;
 window.UMTECloudLogout=async()=>{await cloud.auth.signOut({scope:'local'});localStorage.removeItem('umte-manager-v01');location.href='./';};
 exit.onclick=window.UMTECloudLogout;
 window.fetch=async(input,options={})=>{const value=typeof input==='string'?input:input instanceof URL?input.href:input.url,url=new URL(value,location.href);if(url.origin===location.origin&&['/api/state','/api/members'].includes(url.pathname)){const body=options.body?JSON.parse(options.body):{};return api({action:url.pathname==='/api/members'?'members':options.method==='POST'?'save':'state',...(url.pathname==='/api/members'&&options.method==='POST'?{update:body}:body)});}return nativeFetch(input,options);};
-function report(error){status.textContent=error.message||String(error);exit.hidden=false;form.hidden=false;}
+function report(error,authenticated=false){status.textContent=error.message||String(error);exit.hidden=!authenticated;form.hidden=false;}
 async function accessManager(payload){
  const main=document.querySelector('main');main.replaceChildren();main.style.maxWidth='1000px';
  const title=document.createElement('h1');title.textContent='Gestione accessi e abilitazioni';main.append(title);
@@ -101,6 +101,6 @@ async function open(){
  html=html.slice(0,closingBody)+'<script src="guida-rapida.js?v=privacy-20261117" defer></script><script src="ted-document-archive.js?v=20261116" defer></script><script src="operational-ui-fixes.js?v=20261117" defer></script>'+html.slice(closingBody);
  document.open();document.write(html);document.close();
 }
-form.onsubmit=async e=>{e.preventDefault();const button=document.getElementById('enter');button.disabled=true;status.textContent='Accesso in corso…';try{const {error}=await cloud.auth.signInWithPassword({email:document.getElementById('email').value.trim(),password:document.getElementById('password').value});if(error)throw Error('Email o password non valide.');document.getElementById('password').value='';await open();}catch(e){report(e);}finally{button.disabled=false;}};
-try{const {data}=await cloud.auth.getSession();if(data.session)await open();}catch(e){report(e);}
+form.onsubmit=async e=>{e.preventDefault();const button=document.getElementById('enter');button.disabled=true;status.textContent='Accesso in corso…';let authenticated=false;try{const {error}=await cloud.auth.signInWithPassword({email:document.getElementById('email').value.trim(),password:document.getElementById('password').value});if(error)throw Error('Email o password non valide.');authenticated=true;document.getElementById('password').value='';await open();}catch(e){report(e,authenticated);}finally{button.disabled=false;}};
+try{const {data}=await cloud.auth.getSession();if(data.session)await open();else status.textContent='Inserisci email e password per accedere.';}catch(e){report(e);}
 })();
