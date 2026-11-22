@@ -4,7 +4,7 @@ const fs=require('node:fs');
 const path=require('node:path');
 const vm=require('node:vm');
 
-test('a server enriched report requires refreshed state before another save',async()=>{
+function environment(){
  class Storage{constructor(){this.data=new Map();}setItem(k,v){this.data.set(k,v);}getItem(k){return this.data.get(k)||null;}}
  const localStorage=new Storage(),elements=new Map(),fetches=[];
  const element=()=>({dataset:{},children:[],append(child){this.children.push(child);},set textContent(v){this.text=v;this.children=[];},get textContent(){return this.text||'';}});
@@ -20,14 +20,29 @@ test('a server enriched report requires refreshed state before another save',asy
  },location:{reload(){}},URL,Blob,setTimeout};
  const source=fs.readFileSync(path.join(__dirname,'..','cloud-runtime.js'),'utf8');
  vm.runInNewContext(source,context);
- localStorage.setItem('umte-manager-v01',JSON.stringify({activities:[],activityDiary:[{id:'TEST-REPORT',activityId:'TEST-ACT'}]}));
+ return {localStorage,body,elements,fetches};
+}
+const report=notes=>JSON.stringify({activities:[],activityDiary:[{id:'TEST-REPORT',activityId:'TEST-ACT',...(notes?{notes}:{})}]});
+test('a server enriched report requires refreshed state before another save',async()=>{
+ const {localStorage,body,elements,fetches}=environment();
+ localStorage.setItem('umte-manager-v01',report());
  await new Promise(resolve=>setImmediate(resolve));
  assert.equal(fetches.length,1);
  assert.equal(body.dataset.sharedSaveNeedsReload,'1');
  assert.match(elements.get('sharedSaveStatus').textContent,/Aggiorna il gestionale/);
  assert.ok(elements.get('sharedSaveStatus').children.some(c=>c.textContent==='Aggiorna adesso'));
- localStorage.setItem('umte-manager-v01',JSON.stringify({activities:[],activityDiary:[{id:'TEST-REPORT',activityId:'TEST-ACT',notes:'seconda modifica'}]}));
+ localStorage.setItem('umte-manager-v01',report('seconda modifica'));
  await new Promise(resolve=>setImmediate(resolve));
  assert.equal(fetches.length,1);
  assert.doesNotMatch(localStorage.getItem('umte-manager-v01'),/seconda modifica/);
+});
+test('a queued second change is flagged for recovery rather than silently lost',async()=>{
+ const {localStorage,body,elements,fetches}=environment();
+ localStorage.setItem('umte-manager-v01',report());
+ localStorage.setItem('umte-manager-v01',report('seconda modifica'));
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(fetches.length,1);
+ assert.equal(body.dataset.sharedSaveFailed,'1');
+ assert.match(localStorage.getItem('umte-manager-v01'),/seconda modifica/);
+ assert.ok(elements.get('sharedSaveStatus').children.some(c=>c.textContent==='Scarica copia delle modifiche'));
 });
