@@ -4,7 +4,7 @@ const fs=require('node:fs');
 const path=require('node:path');
 const vm=require('node:vm');
 
-function environment(){
+function environment(role='preposto'){
  class Storage{constructor(){this.data=new Map();}setItem(k,v){this.data.set(k,v);}getItem(k){return this.data.get(k)||null;}}
  const localStorage=new Storage(),elements=new Map(),fetches=[];
  const element=()=>({dataset:{},children:[],append(child){this.children.push(child);},set textContent(v){this.text=v;this.children=[];},get textContent(){return this.text||'';}});
@@ -12,7 +12,7 @@ function environment(){
  const document={body,createElement:element,getElementById:id=>elements.get(id)||null,addEventListener(){}};
  const originalAppend=body.append.bind(body);
  body.append=child=>{if(child.id)elements.set(child.id,child);originalAppend(child);};
- const window={UMTE_SHARED:{user:{role:'preposto',id:'TEST'},data:{activities:[],activityDiary:[]},revision:17},
+ const window={UMTE_SHARED:{user:{role,id:'TEST'},data:{activities:[],activityDiary:[],activityPublications:{}},revision:17},
   UMTEConflict:{saveWithSafeRetry:async({revision,patch,save})=>({result:(await save({revision,patch})).data,retried:false})},addEventListener(){}};
  const context={window,document,Storage,localStorage,structuredClone,JSON,fetch:async(url,options)=>{
   fetches.push({url,body:JSON.parse(options.body)});
@@ -35,6 +35,13 @@ test('a server enriched report requires refreshed state before another save',asy
  await new Promise(resolve=>setImmediate(resolve));
  assert.equal(fetches.length,1);
  assert.doesNotMatch(localStorage.getItem('umte-manager-v01'),/seconda modifica/);
+});
+test('team publication refreshes server supplied author and timestamp',async()=>{
+ const {localStorage,body,fetches}=environment('chief');
+ localStorage.setItem('umte-manager-v01',JSON.stringify({activities:[],activityDiary:[],activityPublications:{'2026-11-16|Arona|1':{revision:1,by:'Client'}}}));
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(fetches.length,1);
+ assert.equal(body.dataset.sharedSaveNeedsReload,'1');
 });
 test('a queued second change is flagged for recovery rather than silently lost',async()=>{
  const {localStorage,body,elements,fetches}=environment();
