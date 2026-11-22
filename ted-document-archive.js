@@ -5,7 +5,7 @@ function init(){
  if(!reports||!history||!diary||document.getElementById('tedDocumentsArchive'))return;
  const root=document.createElement('section');root.id='tedDocumentsArchive';root.className='panel';root.style.cssText='margin:20px 0;padding:18px;min-width:0';
  const heading=document.createElement('h2');heading.textContent='Archivio A15 e VRVT';root.append(heading);
- const intro=document.createElement('p');intro.textContent='A15 e VRVT ricavati dai rapportini salvati. Per correggere un modulo, modifica prima il rapportino.';root.append(intro);
+ const intro=document.createElement('p');intro.textContent='Moduli ricavati dai rapportini salvati. Le revisioni precedenti conservano i dati originali: puoi esportarli, ma non generare un PDF storico con i valori di oggi.';root.append(intro);
  const controls=document.createElement('div');controls.style.cssText='display:flex;flex-wrap:wrap;gap:10px;margin:12px 0';
  const search=document.createElement('input');search.type='search';search.placeholder='Cerca attività, ODL o materiale';search.setAttribute('aria-label','Cerca documenti A15 e VRVT');search.style.cssText='flex:1 1 230px;min-height:44px';
  const kind=document.createElement('select');kind.setAttribute('aria-label','Tipo di documento');for(const [v,t]of [['all','A15 e VRVT'],['a15','Solo A15'],['vrvt','Solo VRVT']])kind.add(new Option(t,v));kind.style.minHeight='44px';
