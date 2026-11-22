@@ -4,7 +4,8 @@ const path=require('node:path');
 const {chromium}=require('playwright');
 const runtime=path.join(__dirname,'..','cloud-runtime.js');
 async function env(page,role,fail=false){
- await page.setContent('<!doctype html><html lang="it"><head><meta name="viewport" content="width=device-width,initial-scale=1"></head><body><header class="topbar"></header></body></html>');
+ await page.route('https://synthetic.invalid/**',route=>route.fulfill({contentType:'text/html',body:'<!doctype html><html lang="it"><head><meta name="viewport" content="width=device-width,initial-scale=1"></head><body><header class="topbar"></header></body></html>'}));
+ await page.goto('https://synthetic.invalid/');
  await page.evaluate(({role,fail})=>{
   window.UMTE_SHARED={user:{role,id:'synthetic-user',name:'Utente sintetico'},data:{activities:[],activityDiary:[],operationalRequests:[],competencies:[]},revision:1};
   window.__saves=[];
