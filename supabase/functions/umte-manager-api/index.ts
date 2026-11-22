@@ -3,11 +3,11 @@
 /**
  * UMTE Manager — Supabase Edge Function mono-file.
  * Generata dai sorgenti modulari del pacchetto originale.
- * DA INCOLLARE SOLO nell'editor Edge Functions di Supabase.
+ * Sorgente versionato e distribuito come Edge Function.
  * Non contiene password, dati personali o baseline.
  * Nome funzione: umte-manager-api
  * Necessita secret UMTE_ALLOWED_ORIGIN = https://stefanrina86.github.io
- * Verifica JWT gateway: disattivata (autenticazione effettuata da auth.getUser nel codice).
+ * Verifica JWT gateway: attiva; la funzione controlla anche la sessione con auth.getUser.
  */
 import { createClient } from 'npm:@supabase/supabase-js@2.118.0';
 
