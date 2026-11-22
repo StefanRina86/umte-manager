@@ -14,7 +14,14 @@ function init(){
  const list=document.createElement('div');list.style.cssText='display:grid;gap:10px';root.append(list);
  reports.querySelector('.page-heading')?.insertAdjacentElement('afterend',root);
  const read=()=>{try{return JSON.parse(localStorage.getItem('umte-manager-v01')||'{}')}catch{return window.UMTE_SHARED?.data||{}}};
- const canEdit=()=>['owner','specialist','administrative','chief','preposto'].includes(window.UMTE_SHARED?.user?.role);
+ const canEdit=entry=>{
+  const user=window.UMTE_SHARED?.user||{};
+  if(!user.permissions?.includes('diaryEdit')&&!['owner','specialist','administrative','chief','preposto'].includes(user.role))return false;
+  if(['owner','specialist','administrative'].includes(user.role))return true;
+  return !!user.id&&String(entry.createdByUserId||'')===String(user.id);
+ };
+ const isWaste=item=>String(item?.condition||'').trim().toLocaleLowerCase('it')==='rifiuto';
+ const dateLabel=value=>{if(!value)return'';const date=new Date(value);return Number.isNaN(date.getTime())?'':date.toLocaleString('it-IT');};
  function nativeAction(target,attr,id,extra){
    const hidden=document.createElement('button');hidden.type='button';hidden.style.display='none';hidden.dataset[attr]=extra||id;
    if(extra)hidden.dataset.materialEntry=String(id);
@@ -25,7 +32,7 @@ function init(){
   const docs=[];
   for(const entry of entries){
    const activity=byId.get(String(entry.activityId));if(!activity)continue;
-   for(const [type,items]of [['a15',entry.materialsUsed],['vrvt',entry.materialsRemoved]]){
+   for(const [type,items]of [['a15',entry.materialsUsed],['vrvt',Array.isArray(entry.materialsRemoved)?entry.materialsRemoved.filter(isWaste):[]]]){
     if(!Array.isArray(items)||!items.length)continue;
     docs.push({type,entry,activity,items,receivedAt:entry.receivedAt||entry.submittedAt||entry.completedAt||''});
    }
@@ -39,10 +46,10 @@ function init(){
   for(const d of filtered){
    const card=document.createElement('article');card.style.cssText='border:1px solid #d8e5ea;border-radius:10px;padding:14px;overflow-wrap:anywhere';
    const title=document.createElement('strong');title.textContent=(d.type==='a15'?'A15 · Materiale impiegato':'VRVT · Tolto d’opera')+' — '+(d.activity.title||'Attività');card.append(title);
-   const meta=document.createElement('p');meta.style.margin='8px 0';meta.textContent=[d.entry.date,d.activity.nucleus,d.activity.location,(d.activity.odls||[]).map(o=>o.number).filter(Boolean).join(', '),d.receivedAt?'Ricevuto: '+new Date(d.receivedAt).toLocaleString('it-IT'):''].filter(Boolean).join(' · ');card.append(meta);
+   const meta=document.createElement('p');meta.style.margin='8px 0';meta.textContent=[d.entry.date,d.activity.nucleus,d.activity.location,(d.activity.odls||[]).map(o=>o.number).filter(Boolean).join(', '),dateLabel(d.receivedAt)?'Ricevuto: '+dateLabel(d.receivedAt):''].filter(Boolean).join(' · ');card.append(meta);
    const detail=document.createElement('p');detail.style.cssText='margin:8px 0;color:#536b79';detail.textContent=d.items.map(i=>[i.code,i.description,i.qty,i.unit].filter(v=>v!==undefined&&v!==null&&v!=='').join(' · ')).join(' | ');card.append(detail);
    const actions=document.createElement('div');actions.style.cssText='display:flex;flex-wrap:wrap;gap:8px';
-   if(canEdit()){const edit=document.createElement('button');edit.type='button';edit.className='button secondary';edit.textContent='Apri rapportino';edit.onclick=()=>nativeAction(history,'editReport',String(d.entry.id));actions.append(edit);}
+   if(canEdit(d.entry)){const edit=document.createElement('button');edit.type='button';edit.className='button secondary';edit.textContent='Apri rapportino';edit.onclick=()=>nativeAction(history,'editReport',String(d.entry.id));actions.append(edit);}
    const pdf=document.createElement('button');pdf.type='button';pdf.className='button primary';pdf.textContent=d.type==='a15'?'Genera A15':'Genera VRVT';pdf.onclick=()=>nativeAction(diary,'printMaterial',String(d.entry.id),d.type);actions.append(pdf);card.append(actions);list.append(card);
   }
  }
