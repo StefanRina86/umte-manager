@@ -42,7 +42,7 @@ for(const role of roles)for(const width of [390,1440]){
    assert.equal(await panel.getByRole('button',{name:'Apri rapportino'}).count(),['owner','specialist','administrative'].includes(role)?2:0);
    await panel.getByRole('button',{name:'Genera VRVT'}).click();
    assert.deepEqual(await page.evaluate(()=>window.__print),[{type:'vrvt',id:'R-1'}]);
-   await panel.getByRole('textbox',{name:'Cerca documenti A15 e VRVT'}).fill('MAT-1');
+   await panel.locator('input[type="search"]').fill('MAT-1');
    assert.equal(await panel.locator('article').count(),1);
    assert.match(await panel.innerText(),/1 A15 · 1 VRVT/);
    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),'Overflow '+role+' '+width);
