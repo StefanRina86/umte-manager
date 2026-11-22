@@ -93,6 +93,10 @@ const trainingCatalog = [{"id":"CAT-ba06a4a378c3fcf0","title":"\"Aggiornamento p
 const sid=x=>String(x||'');
 const same=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
 const teamMembers=(data,user)=>{const own=(data.peopleRecords||[]).find(p=>sid(p.id)===sid(user.person_id));if(!own||!own.nucleus)return new Set([sid(user.person_id)]);return new Set((data.peopleRecords||[]).filter(p=>p.active!==false&&p.nucleus===own.nucleus&&String(p.team||'')===String(own.team||'')).map(p=>sid(p.id)).concat([sid(user.person_id)]));};
+const teamCode=value=>String(value||'').replace(/^Squadra\s*/i,'').trim();
+const chiefHome=(data,user)=>{const person=(data.peopleRecords||[]).find(p=>sid(p.id)===sid(user.person_id)&&p.active!==false);if(!person?.nucleus||!teamCode(person.team))throw Error('Capo Tecnico senza squadra attiva');return person;};
+const chiefOwn=(activity,person)=>activity?.nucleus===person.nucleus&&teamCode(activity.team)===teamCode(person.team);
+const chiefPublicationKey=(week,person)=>week+'|'+person.nucleus+'|'+teamCode(person.team);
 const assigned=(data,user)=>{const ids=teamMembers(data,user);return new Set((data.activities||[]).filter(a=>
  (a.people||[]).some(id=>ids.has(sid(id)))||
  Object.values(a.roleAssignments||{}).some(id=>ids.has(sid(id)))||
@@ -121,7 +125,7 @@ export function visibleState(data,user){
   d.peopleRecords=(d.peopleRecords||[]).filter(p=>memberIds.has(sid(p.id))).map(p=>{const {id,name,surname,displayName,nucleus,team,qualification,rotation,active,validities,skills}=p;return{id,name,surname,displayName,nucleus,team,qualification,rotation,active,...(role==='chief'?{validities,skills}:{})};});
   d.trainingEvents=[];d.trainingCompletions=[];d.courseCatalogOverrides=[];d.safetyRecords=[];d.auditLog=[];d.presenceImportHistory=[];
   d.shiftRules=[];d.theoreticalRules=[];d.rotationJumps=[];d.manualLocations=[];
-  d.energyMaintenanceHistory=[];d.ruleConfig={};d.activityPublications={};d.locationCatalog={};d.odlCatalog=[];
+  d.energyMaintenanceHistory=[];d.ruleConfig={};d.activityPublications=role==='chief'?Object.fromEntries(Object.entries(d.activityPublications||{}).filter(([key])=>{try{const person=chiefHome(data,user);return key.endsWith('|'+person.nucleus+'|'+teamCode(person.team));}catch{return false;}})):{};d.locationCatalog={};d.odlCatalog=[];
  }
  if(scoped){const out={};for(const key of ["activities","activityDiary","activityPublications","auditLog","competencies","courseCatalogOverrides","energyMaintenanceHistory","leaveCampaigns","leaveRequests","locationCatalog","manualLocations","medicalAppointments","odlCatalog","operationalRequests","peopleRecords","presenceImportHistory","presenceImportVersion","rotationJumps","ruleConfig","safetyRecords","shiftRules","theoreticalRules","trainingCompletions","trainingEvents","variations"])if(Object.prototype.hasOwnProperty.call(d,key))out[key]=d[key];return out;}
  return d;
@@ -181,6 +185,45 @@ export function applyPatch(data,patch,user){const next=structuredClone(data),per
  }
  if(key==='peopleRecords'&&!perms.includes('adminManage')&&perms.includes('schedulePeopleEvents')){next[key]=mergeRows(data[key]||[],data[key]||[],value,(r,old)=>{if(!old)throw Error('Nuovo personale non autorizzato');const a={...r},b={...old};for(const f of ['phone','email','contactsSeedVersion','contactsEditedAt','updatedAt','updatedBy']){delete a[f];delete b[f];}if(!same(a,b))throw Error('Solo contatti modificabili');});continue;}
  if(!allowed[key]||!perms.includes(allowed[key])&&!(key==='activities'&&user.role==='preposto'))throw Error('Operazione non autorizzata: '+key);
+ if(user.role==='chief'&&key==='activities'){
+  const person=chiefHome(data,user),original=data.activities||[],visible=visibleState(data,user).activities||[];
+  if(!Array.isArray(value))throw Error('Elenco attività non valido');
+  const ids=new Set(),visibleIds=new Set(visible.map(a=>sid(a.id))),byId=new Map(original.map(a=>[sid(a.id),a]));
+  for(const activity of value){
+   const id=sid(activity?.id),old=byId.get(id);
+   if(!id||ids.has(id))throw Error('Identificativo attività non valido');ids.add(id);
+   if(old&&!visibleIds.has(id))throw Error('Attività non autorizzata');
+   if(old&&same(activity,old))continue;
+   if(old&&!chiefOwn(old,person)||!chiefOwn(activity,person))throw Error('Attività fuori dalla propria squadra');
+   if(old?.sourceCourseEventId)throw Error('Attività corso gestita dalla pagina corsi');
+   if((activity.people||[]).some(pid=>!teamMembers(data,user).has(sid(pid))&&!(old?.people||[]).map(sid).includes(sid(pid))))throw Error('Assegnazione fuori squadra non autorizzata');
+   if(Object.values(activity.roleAssignments||{}).some(pid=>pid&&!teamMembers(data,user).has(sid(pid))&&!Object.values(old?.roleAssignments||{}).map(sid).includes(sid(pid))))throw Error('Incarico fuori squadra non autorizzato');
+   if(activity.status==='published'&&old?.status!=='published'){
+    const day=new Date(String(activity.date||'')+'T12:00:00Z');
+    if(Number.isNaN(+day))throw Error('Data attività non valida');
+    const monday=new Date(+day-((day.getUTCDay()+6)%7)*86400000).toISOString().slice(0,10);
+    if(!patch.activityPublications?.[chiefPublicationKey(monday,person)])throw Error('Pubblicazione della squadra richiesta');
+   }
+  }
+  for(const old of visible)if(!ids.has(sid(old.id))){
+   if(!chiefOwn(old,person))throw Error('Attività di altra squadra non eliminabile');
+   if(old.sourceCourseEventId||(data.activityDiary||[]).some(r=>sid(r.activityId)===sid(old.id)))throw Error('Attività con corso o rapportino protetta');
+  }
+  next.activities=[...original.filter(a=>!visibleIds.has(sid(a.id))),...value];continue;
+ }
+ if(user.role==='chief'&&key==='activityPublications'){
+  const person=chiefHome(data,user),original=data.activityPublications||{},visible=visibleState(data,user).activityPublications||{};
+  if(!value||typeof value!=='object'||Array.isArray(value))throw Error('Pubblicazioni non valide');
+  if(Object.keys(visible).some(k=>!Object.hasOwn(value,k)))throw Error('Pubblicazione esistente protetta');
+  const changed=Object.entries(value).filter(([key,entry])=>!same(entry,visible[key]));
+  if(changed.length!==1)throw Error('Pubblica una sola settimana della propria squadra');
+  const [week,entry]=changed[0],key=chiefPublicationKey(week.slice(0,10),person),previous=original[key];
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(week.slice(0,10))||week!==key||!entry||entry.revision!==(previous?.revision||0)+1)throw Error('Revisione programma non valida');
+  const monday=new Date(week.slice(0,10)+'T12:00:00Z');if(Number.isNaN(+monday)||monday.getUTCDay()!==1)throw Error('Settimana programma non valida');
+  const active=patch.activities||data.activities||[],weekEnd=new Date(+monday+6*86400000).toISOString().slice(0,10),items=active.filter(a=>chiefOwn(a,person)&&a.date>=week.slice(0,10)&&a.date<=weekEnd);
+  if(!items.length||items.some(a=>!['published','done'].includes(a.status)))throw Error('Attività della squadra non pubblicate');
+  next.activityPublications={...original,[key]:{at:new Date().toISOString(),by:user.name||user.email,revision:entry.revision}};continue;
+ }
  // Frontline writes require record-level ownership. Enabled in a separate dedicated flow; never accept a whole team snapshot.
  if(!managerRoles.includes(user.role)){
  const own=assigned(data,user),visible=visibleState(data,user);
