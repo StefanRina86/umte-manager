@@ -43,6 +43,7 @@ for(const role of roles)for(const width of [390,1440]){
    await panel.getByRole('button',{name:'Genera VRVT'}).click();
    assert.deepEqual(await page.evaluate(()=>window.__print),[{type:'vrvt',id:'R-1'}]);
    await panel.locator('input[type="search"]').fill('MAT-1');
+   await page.waitForFunction(()=>document.querySelectorAll('#tedDocumentsArchive article').length===1);
    assert.equal(await panel.locator('article').count(),1);
    assert.match(await panel.innerText(),/1 A15 · 1 VRVT/);
    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),'Overflow '+role+' '+width);
