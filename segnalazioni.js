@@ -63,7 +63,7 @@
     $('requestTake').hidden=!manage()||!active(r)||Boolean(r.assignedTo);$('requestEdit').hidden=!manage()||!active(r);$('requestReopen').hidden=!manage()||!['resolved','closed'].includes(r.status);$('requestCancel').hidden=!manage()||!active(r);
     $('requestManagement').hidden=!manage()||r.status==='cancelled';$('rdStatus').value=r.status;$('rdOwner').value=r.assignedTo||'';$('rdDue').value=r.due||'';
     $('requestOwners').innerHTML=api.people().filter(p=>/CUM|SPEC|CT|STA/i.test(p.qualification||'')).map(p=>`<option value="${esc(p.displayName)}"></option>`).join('');
-    $('requestMessages').innerHTML=(r.history||[]).map(h=>`<div class="request-message"><small>${esc(date(h.at))} · ${esc(h.by)} · ${esc(h.action)}</small>${esc(h.text||'')}</div>`).join('');$('rdReply').value='';$('requestDetailError').textContent='';$('requestReplyForm').hidden=!write()||r.status==='cancelled';render();if(!detail.open)detail.showModal();
+    $('requestMessages').innerHTML=(r.history||[]).map(h=>`<div class="request-message"><small>${esc(date(h.at))} · ${esc(h.by)} · ${esc(h.action)}</small>${esc(h.text||'')}</div>`).join('');$('rdReply').value='';$('requestDetailError').textContent='';$('requestReplyForm').hidden=!manage()||r.status==='cancelled';render();if(!detail.open)detail.showModal();
   }
   function update(action,fn){
     if(!manage())return;pull();const old=s.operationalRequests.find(r=>r.id===opened);if(!old)return;const r=JSON.parse(JSON.stringify(old));if(old.updatedAt!==revision){api.toast('Ci sono aggiornamenti: riapri la scheda prima di modificare');return;}
