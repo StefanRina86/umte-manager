@@ -1319,7 +1319,7 @@ function renderMaterialArchive(){
 }
   function printDiaryMaterialDoc(entryId,kind,revision=null){
  const entry=state.activityDiary.find(r=>String(r.id)===String(entryId)),activity=state.activities.find(a=>String(a.id)===String(entry?.activityId));if(!entry||!activity)return;
- const used=kind==='a15',snapshot=materialDocumentSnapshots(entry).find(doc=>doc.kind===kind&&(revision===null||doc.revision===Number(revision))),items=snapshot?.items||[];if(!items.length){toast('Nessun materiale registrato');return;}
+ const used=kind==='a15',versions=materialDocumentSnapshots(entry).filter(doc=>doc.kind===kind),snapshot=revision===null?versions.at(-1):versions.find(doc=>doc.revision===Number(revision)),items=snapshot?.items||[];if(!items.length){toast('Nessun materiale registrato');return;}
  const safe=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
  const title=(used?'Modulo A15 — materiale impiegato':'VRVT — verifica materiale tolto d’opera')+' · rev. '+(snapshot?.revision||1),odl=(activity.odls||[]).map(o=>o.number).filter(Boolean).join(', ');
  const win=window.open('','_blank');if(!win){toast('Consenti le finestre popup');return;}
