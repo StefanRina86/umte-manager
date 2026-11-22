@@ -93,7 +93,7 @@
         <button class="nav-item" data-view="activities" data-permission="viewActivities"><span>06</span>Programma attività</button>
         <button class="nav-item" data-view="dossiers" data-permission="viewDossiers"><span>07</span>Verbali e Gantt</button>
         <button class="nav-item" data-view="matApp" data-permission="viewMaterials"><span>08</span>Materiali e rifiuti</button>
-        <button class="nav-item" data-view="reports" data-permission="viewReports"><span>09</span>Storico rapportini</button>
+        <button class="nav-item" data-view="reports" data-permission="viewReports"><span>09</span>Rapportini e moduli</button>
         <button class="nav-item" data-view="requests" data-permission="viewShifts"><span>10</span>Segnalazioni e richieste <b id="requestNavCount"></b></button>
         <button class="nav-item" data-view="administration" data-permission="adminManage"><span>11</span>Amministrazione</button>
       </nav>
@@ -491,7 +491,7 @@
     <form id="diaryForm" method="dialog">
       <input id="diaryActivityId" type="hidden">
       <input id="diaryEntryId" type="hidden">
-      <div class="modal-head"><div><span class="eyebrow">Continuità manutentiva</span><h2 id="diaryTitle">Diario di bordo</h2></div><button type="button" class="icon-button" data-close aria-label="Chiudi">×</button></div>
+      <div class="modal-head"><div><h2 id="diaryTitle">Rapportino TE-D</h2></div><button type="button" class="icon-button" data-close aria-label="Chiudi">×</button></div>
       <div id="diaryHistory" class="diary-history"></div>
       <div id="diaryEditState" class="diary-edit-state" hidden>Stai modificando una registrazione già inserita. Autore e data della modifica resteranno nello storico.</div>
       <div id="diaryLinkedAnomalies" class="notice" hidden><strong>Anomalie affidate al preposto</strong><span></span></div>
@@ -504,7 +504,7 @@
         <label class="span-2">Anomalie riscontrate<textarea id="diaryAnomalies" rows="2"></textarea></label><label>Stato anomalia<select id="diaryAnomalyStatus"><option value="open">Da gestire</option><option value="managed">Gestita</option></select></label>
       </div>
       <fieldset class="activity-fieldset" data-permission="diaryEdit"><legend>Squadra effettivamente presente</legend><p class="fieldset-help">Aggiungi chi ha partecipato davvero e rimuovi chi è risultato assente. La squadra programmata non viene modificata; la variazione resta registrata nel TE-D.</p><div id="diaryActualCrew"></div><div class="form-grid"><label>Aggiungi collega<select id="diaryCrewAdd"><option value="">Seleziona una persona</option></select></label><label class="span-2">Motivo della variazione rispetto al programma<input id="diaryCrewReason" placeholder="Es. sostituzione, assenza, rinforzo di altro nucleo"></label></div></fieldset>
-      <fieldset class="activity-fieldset" data-permission="diaryEdit"><legend>Materiali impiegati</legend><p class="fieldset-help">Digita parte del categorico o della descrizione e scegli il materiale proposto. Elenco aggiornato dal Tool Check: Tip.FS TEC, stato 00 e materiale fornibile. Resta possibile l’inserimento manuale.</p><datalist id="diaryMaterialCatalog"></datalist><div id="diaryUsedMaterials" class="odl-rows"></div><button id="addDiaryUsedMaterial" type="button" class="button secondary compact">+ Materiale impiegato</button></fieldset>
+      <fieldset class="activity-fieldset" data-permission="diaryEdit"><legend>Materiali impiegati</legend><p class="fieldset-help">Cerca per categorico o descrizione.</p><datalist id="diaryMaterialCatalog"></datalist><div id="diaryUsedMaterials" class="odl-rows"></div><button id="addDiaryUsedMaterial" type="button" class="button secondary compact">+ Materiale impiegato</button></fieldset>
       <fieldset class="activity-fieldset" data-permission="diaryEdit"><legend>Tolto d’opera</legend><p class="fieldset-help">Indica quantità e stato. Se è un rifiuto, scegli il CER.</p><div id="diaryRemovedMaterials" class="odl-rows"></div><button id="addDiaryRemovedMaterial" type="button" class="button secondary compact">+ Tolto d’opera</button></fieldset>
       <fieldset class="rapport-competence-fieldset" data-permission="diaryEdit"><legend>Competenze della squadra</legend>
         <div class="rapport-competence-head"><p>Seleziona soltanto ciò che è maturato durante questa attività. Il sistema propone le voci ricavabili da turno, orario e località; il salvataggio aggiorna subito le competenze e registra chi ha compilato.</p><button id="diarySuggestCompetences" type="button" class="button secondary compact">Ripristina proposte</button></div>
@@ -518,7 +518,7 @@
         <div id="diaryCompetenceSummary" class="rapport-summary">Nessuna competenza selezionata.</div>
       </fieldset>
       <p class="fieldset-help">A15 e VRVT sono preparati dal TE-D e raccolti nell’archivio moduli.</p>
-      <div class="notice"><strong>PDF del rapportino</strong><span>Salva il rapportino e scarica il PDF. Gabriele gestisce l’invio per le firme a Stefano e ai preposti.</span></div>
+      
       <div class="modal-actions"><button id="diaryPrintCurrent" type="button" class="button secondary" hidden>TE-D / PDF del rapportino</button><button id="diaryCancelEdit" type="button" class="button secondary" hidden>Annulla modifica</button><button type="button" class="button secondary" data-close>Chiudi</button><button id="diarySubmit" type="submit" class="button primary" data-permission="diaryEdit">Aggiungi registrazione</button></div>
     </form>
   </dialog>
@@ -1328,7 +1328,7 @@ function renderMaterialArchive(){
  const trs=items.map((p,i)=>'<tr><td>'+(i+1)+'</td>'+vals(p).map(x=>'<td>'+safe(x||'—')+'</td>').join('')+'</tr>').join('');
  const extra=used?'':'<p>Deposito / destinazione: ___________________________</p><p>FIR (ove previsto): ___________________________</p><p>Note sulla classificazione: ____________________________________________________</p>';
  const css='@page{size:A4;margin:15mm}body{font:12px Arial;color:#162e3c;padding:15px}h1{font-size:20px}table{border-collapse:collapse;width:100%;margin:16px 0}td,th{border:1px solid #9cabb7;padding:8px;text-align:left;vertical-align:top}th{background:#edf2f6}.notice{padding:12px;border:1px solid #caad6c;background:#fff7e5}.meta{display:grid;grid-template-columns:1fr 1fr;gap:8px}.meta>div{border:1px solid #c9d3dc;padding:8px}.sign{display:grid;grid-template-columns:1fr 1fr;gap:50px;margin-top:65px}.sign>div{border-top:1px solid #333;text-align:center;padding-top:7px}@media print{button{display:none}}';
- const meta=[['Data',entry.date],['Nucleo',activity.nucleus],['Attività',activity.title],['ODL',odl],['Località',activity.location],['Compilatore',entry.createdBy||entry.reportedBy]];
+ const meta=[['Data',snapshot?.date||entry.date],['Nucleo',activity.nucleus],['Attività',activity.title],['ODL',odl],['Località',activity.location],['Compilatore',snapshot?.by||entry.createdBy||entry.reportedBy]];
  const html='<!doctype html><html lang="it"><head><meta charset="utf-8"><title>'+safe(title)+'</title><style>'+css+'</style></head><body><button onclick="window.print()">STAMPA / SALVA PDF</button><h1>'+safe(title)+'</h1><div class="notice"><b>BOZZA DA VERIFICARE</b> — Controllare codici, quantità, classificazioni e procedure applicabili. Non sostituisce il modello aziendale approvato.</div><div class="meta">'+meta.map(x=>'<div><b>'+safe(x[0])+'</b><p>'+safe(x[1]||'—')+'</p></div>').join('')+'</div><table><thead><tr><th>N.</th>'+columns.map(h=>'<th>'+safe(h)+'</th>').join('')+'</tr></thead><tbody>'+trs+'</tbody></table>'+extra+'<div class="sign"><div>Compilatore</div><div>Verifica / approvazione</div></div></body></html>';
  win.document.open();win.document.write(html);win.document.close();
 }
