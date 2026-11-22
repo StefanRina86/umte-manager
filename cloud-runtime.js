@@ -20,9 +20,10 @@
    });
    revision=outcome.result.revision;
    baseline=structuredClone(target);
-   if(outcome.retried){
+   const serverGeneratedFields=Object.keys(patch).some(k=>k==='activityDiary'||k==='operationalRequests');
+   if(outcome.retried||serverGeneratedFields){
      requiresReload=true;
-     box().textContent='Salvataggio riuscito dopo un conflitto. Prima di altre modifiche aggiorna il gestionale per vedere i dati salvati dagli altri utenti. ';
+     box().textContent=outcome.retried?'Salvataggio riuscito dopo un conflitto. Aggiorna il gestionale prima di altre modifiche. ':'Salvato nell’archivio condiviso. Aggiorna il gestionale prima di altre modifiche per caricare i dati completati dal server. ';
      const reload=document.createElement('button');reload.type='button';reload.textContent='Aggiorna adesso';
      reload.onclick=()=>location.reload();
      box().append(reload);
