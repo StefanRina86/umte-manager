@@ -44,7 +44,7 @@ for(const role of roles)for(const width of [390,1440]){
    assert.equal(await page.locator('#requestEditor').isVisible(),true);
    if(role!=='owner'){assert.equal(await page.locator('#rqPerson').inputValue(),'TEST-CID');assert.equal(await page.locator('#rqPerson').isDisabled(),true);}
    await page.getByRole('button',{name:'Annulla'}).click();
-   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),'Overflow on '+width+'px '+role);
+   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),'Overflow on '+width+'px '+role+' '+JSON.stringify(await page.evaluate(()=>[...document.querySelectorAll('body *')].map(e=>({tag:e.tagName,id:e.id,className:typeof e.className==='string'?e.className:'',right:Math.round(e.getBoundingClientRect().right),width:Math.round(e.getBoundingClientRect().width)})).filter(e=>e.right>innerWidth+2).sort((a,b)=>b.right-a.right).slice(0,8))));
    assert.deepEqual(errors,[]);
    await page.screenshot({path:path.join(process.env.RUNNER_TEMP||'/tmp','umte-requests-'+role+'-'+width+'.png'),fullPage:true});
   }finally{await browser.close();}
