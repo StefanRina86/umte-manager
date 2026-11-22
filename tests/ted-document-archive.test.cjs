@@ -67,3 +67,36 @@ test('VRVT non presente quando il tolto d’opera non è un rifiuto',async()=>{
   assert.equal(await page.getByRole('button',{name:'Genera VRVT'}).count(),0);
  }finally{await browser.close();}
 });
+
+
+test('Versioni A15 storiche restano consultabili senza generare un PDF con dati correnti',async()=>{
+ const browser=await chromium.launch({headless:true});
+ try{
+  const page=await browser.newPage({acceptDownloads:true});
+  const historic=structuredClone(state);
+  historic.activityDiary[0].materialsUsed=[{code:'MAT-NEW',description:'Materiale nuovo',qty:'2',unit:'pz'}];
+  historic.activityDiary[0].materialDocSnapshots=[
+   {kind:'a15',revision:1,at:'2026-11-19T10:00:00Z',by:'Operatore',items:[{code:'MAT-OLD',description:'Materiale vecchio',qty:'1',unit:'pz'}]},
+   {kind:'a15',revision:2,at:'2026-11-20T10:00:00Z',by:'Operatore',items:[{code:'MAT-NEW',description:'Materiale nuovo',qty:'2',unit:'pz'}]}
+  ];
+  await page.setContent('<section id="reports"><div class="page-heading"></div><div id="reportHistoryBody"></div><div id="diaryHistory"></div></section>');
+  await page.evaluate(state=>{
+   window.UMTE_SHARED={user:{role:'owner',id:'owner'},data:state};
+   Object.defineProperty(window,'localStorage',{configurable:true,value:{getItem:()=>JSON.stringify(state)}});
+  },historic);
+  await page.addScriptTag({path:archive});
+  const panel=page.locator('#tedDocumentsArchive');
+  assert.match(await panel.innerText(),/2 A15 · 1 VRVT/);
+  const previous=panel.locator('article').filter({hasText:'Revisione 1'});
+  const current=panel.locator('article').filter({hasText:'Revisione 2'});
+  assert.match(await previous.innerText(),/MAT-OLD/);
+  assert.equal(await previous.getByRole('button',{name:'Genera A15'}).count(),0);
+  assert.equal(await previous.getByRole('button',{name:'Esporta dati revisione'}).count(),1);
+  assert.equal(await current.getByRole('button',{name:'Genera A15'}).count(),1);
+  assert.match(await current.innerText(),/MAT-NEW/);
+  const pending=page.waitForEvent('download');
+  await previous.getByRole('button',{name:'Esporta dati revisione'}).click();
+  const download=await pending;
+  assert.match(download.suggestedFilename(),/A15.*rev1.json$/);
+ }finally{await browser.close();}
+});
