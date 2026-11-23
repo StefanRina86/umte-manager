@@ -1,4 +1,4 @@
-/* Mantenimento collettivo per le sole abilitazioni Energia MI.EN. */
+/* Mantenimento collettivo per tutte le abilitazioni Energia MI.EN.; esclusa la sicurezza MI.OPC. */
 (()=>{
 'use strict';
 const shared=window.UMTE_SHARED;
@@ -9,7 +9,7 @@ const people=(shared.data.peopleRecords||[]).filter(p=>p.active!==false&&(p.vali
 const element=(tag,txt)=>{const e=document.createElement(tag);if(txt)e.textContent=txt;return e;};
 const section=element('section');section.className='umte-energy-maintenance panel';
 const detail=element('details'),title=element('summary','Mantenimento competenze Energia · registrazione per più partecipanti');detail.append(title);
-detail.append(element('p','Una sessione per tutte le abilitazioni MI.EN. possedute dai partecipanti selezionati. Non modifica MI.OPC (OPC, guida/scorta), nomina, idoneità o esercizio. Registrare solo attività realmente eseguite.'));
+detail.append(element('p','Una sessione aggiorna mantenimento e scadenza del ruolo di tutte le abilitazioni MI.EN. dei partecipanti. Non modifica MI.OPC (OPC, guida/scorta), nomina, idoneità o esercizio. Registrare solo attività realmente eseguite.'));
 const form=element('form');form.className='umte-energy-form';form.autocomplete='off';
 const fields=element('div');fields.className='umte-energy-fields';
 const addInput=(txt,type)=>{const label=element('label',txt),i=element('input');i.type=type;i.required=true;label.append(i);fields.append(label);return i;};
@@ -48,14 +48,19 @@ const status=element('p');status.setAttribute('role','status');status.setAttribu
 form.append(actions,list,count,label,submit,status);
 form.onsubmit=async e=>{
  e.preventDefault();const ids=[...selected];
+ if(typeof window.UMTECloudCanRunEnergyMaintenance==='function'&&!window.UMTECloudCanRunEnergyMaintenance()){status.textContent='Attendi il completamento degli altri salvataggi prima di registrare il mantenimento.';return;}
  if(!ids.length){status.textContent='Seleziona i partecipanti effettivi.';return;}
  if(!date.value||!expiry.value||expiry.value<date.value||!reference.value.trim()){status.textContent='Data, scadenza e verbale sono obbligatori.';return;}
- if(!confirm('Confermi il mantenimento svolto il '+date.value+' per '+ids.length+' partecipanti? Verranno aggiornate tutte le loro abilitazioni MI.EN.'))return;
+ if(!confirm('Confermi il mantenimento svolto il '+date.value+' per '+ids.length+' partecipanti? Verranno aggiornate scadenza mantenimento e scadenza ruolo per tutte le loro abilitazioni MI.EN.'))return;
  submit.disabled=true;status.textContent='Registrazione in corso…';
  try{
-  const response=await api({action:'energyMaintenance',revision:shared.revision,personIds:ids,date:date.value,expiry:expiry.value,reference:reference.value.trim(),notes:notes.value.trim()});
+  const response=await api({action:'energyMaintenance',revision:(window.UMTECloudCurrentRevision?.()??shared.revision),personIds:ids,date:date.value,expiry:expiry.value,reference:reference.value.trim(),notes:notes.value.trim()});
   const result=await response.json();if(!response.ok)throw Error(result.error||'Operazione non riuscita');
-  status.textContent='Aggiornate '+result.changed+' abilitazioni. Ricaricamento…';location.reload();
+  const synced=window.UMTECloudApplyEnergyMaintenance?.(result)===true;
+  if(!synced){status.textContent='Salvato sul server: '+result.changed+' abilitazioni aggiornate. I dati della pagina non sono sincronizzati: usa Aggiorna dati quando hai concluso.';return;}
+  status.textContent='Mantenimento salvato correttamente: '+result.changed+' abilitazioni Energia aggiornate, comprese le scadenze del ruolo. Puoi continuare a lavorare senza uscire.';
+  selected.clear();refresh();notes.value='';
+  submit.disabled=false;
  }catch(error){status.textContent=error.message;submit.disabled=false;}
 };
 detail.append(form);section.append(detail);parent.insertAdjacentElement('afterend',section);refresh();
