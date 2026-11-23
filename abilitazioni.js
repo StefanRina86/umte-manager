@@ -11,6 +11,15 @@
   const operational=document.createElement('p');operational.className='qualification-source';operational.id='umteOpcRoleEvidence';
   const diaries=Array.isArray(window.UMTE_SHARED?.data?.activityDiary)?window.UMTE_SHARED.data.activityDiary:[];
   const documented=diaries.filter(r=>r.completed===true||r.status==='completed'||r.status==='submitted'||r.submittedAt||r.receivedAt).length;
-  operational.textContent='Operatore di cantiere, guida e scorta mezzi d’opera (MI.OPC): il mantenimento tramite esercizio richiede riscontri delle attività effettivamente svolte e verifica degli altri requisiti. Rapportini conclusi presenti nel gestionale: '+documented+'. Nessun rinnovo automatico, scadenza rimossa o attestazione di validità per presunzione.';
+  const baseline=window.UMTE_SHARED?.data?.opcExerciseBaseline;
+  function paintOperational(){
+    const personId=String(document.getElementById('validityDialog')?.dataset.personId||'');
+    const entries=Array.isArray(baseline?.items)?baseline.items.filter(x=>String(x.personId)===personId):[];
+    operational.textContent=entries.length
+      ?'Esercizio ruoli MI.OPC · 2026: OK gestionale dichiarato ('+entries.length+' voci). Non è una convalida delle abilitazioni né elimina le scadenze ufficiali. 2027: verifica basata sui rapportini effettivamente compilati e sugli altri requisiti, non ancora attestata automaticamente.'
+      :'Operatore di cantiere, guida e scorta mezzi d’opera (MI.OPC): verifica su attività svolte e documenti. Rapportini conclusi presenti: '+documented+'. Nessuna attestazione di validità per presunzione.';
+  }
+  paintOperational();
+  new MutationObserver(paintOperational).observe(document.getElementById('validitySummary'),{childList:true});
   detail.after(operational);
 })();
