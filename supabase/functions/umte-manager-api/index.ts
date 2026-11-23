@@ -283,7 +283,19 @@ export function applyPatch(data,patch,user){const next=structuredClone(data),per
  if((planned.length!==actual.length||planned.some(pid=>!actual.includes(pid)))&&!String(r.crewChangeReason||'').trim())throw Error('Motivo variazione squadra obbligatorio');
  if((r.teamCompetences||[]).some(c=>!actual.includes(String(c.personId))))throw Error('Competenze riferite a personale non presente');});continue;}
  if(key==='competencies'){next[key]=mergeRows(data[key]||[],visible[key]||[],value,(r,old)=>{protectApproval(r,old);if(String(r.personId)===String(user.person_id))return;const contributions=Object.keys(r.diaryContributions||{}).filter(id=>!same(r.diaryContributions[id],old?.diaryContributions?.[id]));if(!contributions.length||contributions.some(id=>!(patch.activityDiary||data.activityDiary||[]).some(e=>String(e.id)===id&&own.has(String(e.activityId)))))throw Error('Competenze non assegnate');});continue;}
- if(key==='activities'){next[key]=mergeRows(data[key]||[],visible.activities||[],value,(r,old)=>{if(!old||!own.has(String(r.id)))throw Error('Attività non assegnata');const a={...r},b={...old};delete a.status;delete b.status;if(!same(a,b)||!['done','ready'].includes(r.status))throw Error('Solo esito rapportino modificabile');});continue;}
+ if(key==='activities'){next[key]=mergeRows(data[key]||[],visible.activities||[],value,(r,old)=>{
+   if(!old&&user.role==='preposto'){
+    const home=(data.peopleRecords||[]).find(x=>sid(x.id)===sid(user.person_id));
+    if(!home||r.unplanned!==true||r.source!=='TE-D non programmato'||r.nucleus!==home.nucleus||
+       !/^UNPL-/.test(String(r.id))||!Array.isArray(r.people)||!r.people.includes(sid(user.person_id))||
+       !/^\d{4}-\d{2}-\d{2}$/.test(String(r.date||''))||!String(r.title||'').trim()||!String(r.location||'').trim()||
+       (r.people||[]).some(pid=>!teamMembers(data,user).has(sid(pid))))throw Error('Attività non programmata non autorizzata');
+    return;
+   }
+   if(!old||!own.has(String(r.id)))throw Error('Attività non assegnata');
+   const a={...r},b={...old};delete a.status;delete b.status;
+   if(!same(a,b)||!['done','ready'].includes(r.status))throw Error('Solo esito rapportino modificabile');
+  });continue;}
  throw Error('Registrazione riservata ai profili di gestione');
  }
  if(key==='competencies'&&!perms.includes('approve')){for(const r of value||[]){const old=(data.competencies||[]).find(o=>String(o.id)===String(r.id));for(const f of ['approvedAt','approvedBy'])if(!same(r[f],old?.[f]))throw Error('Approvazione riservata al responsabile');if(r.status==='approved'&&old?.status!=='approved')throw Error('Approvazione riservata al responsabile');}}
