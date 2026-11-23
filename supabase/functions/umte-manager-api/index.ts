@@ -291,6 +291,41 @@ export function applyPatch(data,patch,user){const next=structuredClone(data),per
  if(key==='activities'){const ids=new Set((value||[]).map(r=>String(r.id)));const removed=new Set((data.activities||[]).filter(a=>!ids.has(String(a.id))).map(a=>String(a.id)));if((data.activityDiary||[]).some(r=>removed.has(String(r.activityId))))throw Error('Attività con rapportino protetta');}
  next[key]=value;
  }
+ if(patch.trainingEvents){
+  // MF o altro corso su RGLS: l'intera prestazione netta è straordinario.
+  const now=new Date().toISOString(),changedIds=new Set((patch.trainingEvents||[]).filter(e=>!same(e,(data.trainingEvents||[]).find(x=>sid(x.id)===sid(e.id)))).map(e=>sid(e.id)));
+  for(const event of next.trainingEvents||[]){
+   if(!changedIds.has(sid(event.id)))continue;
+   for(const day of event.dayShifts||[]){
+    if(String(day.before||day.theoretical||'').toUpperCase()!=='RGLS')continue;
+    const pid=sid(day.personId),date=String(day.date||'');
+    const from=String(event.start||'08:30'),to=String(event.end||'17:06');
+    if(!/^\\d{2}:\\d{2}$/.test(from)||!/^\\d{2}:\\d{2}$/.test(to))throw Error('Orario corso RGLS non valido');
+    const minutes=t=>Number(t.slice(0,2))*60+Number(t.slice(3,5));
+    let gross=minutes(to)-minutes(from);if(gross<0)gross+=1440;
+    if(!gross)throw Error('Durata corso RGLS non valida');
+    const pause=gross>300?60:0,net=Math.max(0,gross-pause);
+    const person=(next.peopleRecords||[]).find(x=>sid(x.id)===pid);
+    if(!person)throw Error('Personale RGLS non disponibile');
+    const existing=(next.competencies||[]).find(x=>sid(x.personId)===pid&&x.date===date);
+    const note='Formazione su RGLS: '+Math.floor(net/60)+'h'+String(net%60).padStart(2,'0')+' nette, pausa '+pause+' minuti';
+    if(existing){
+     if(existing.autoRglsEventId&&existing.autoRglsEventId!==event.id)throw Error('Straordinario RGLS già associato ad altro corso');
+     existing.allowances={...(existing.allowances||{}),overtime:true};
+     existing.overtimeStart=from;existing.overtimeEnd=to;existing.overtimeReason=note;
+     existing.overtimeGrossMinutes=gross;existing.overtimeBreakMinutes=pause;existing.overtimeNetMinutes=net;
+     existing.autoRglsEventId=event.id;existing.status='updated';delete existing.approvedAt;delete existing.approvedBy;
+     existing.updatedAt=now;existing.updatedBy=user.name||user.email;
+    }else{
+     next.competencies=next.competencies||[];
+     next.competencies.push({id:'RGLS-'+sid(event.id)+'-'+pid+'-'+date,personId:pid,personName:person.displayName,nucleus:person.nucleus,date,
+      status:'updated',allowances:{overtime:true},overtimeStart:from,overtimeEnd:to,overtimeReason:note,
+      overtimeGrossMinutes:gross,overtimeBreakMinutes:pause,overtimeNetMinutes:net,autoRglsEventId:event.id,
+      notes:note,source:'MF su riposo RGLS',createdAt:now,createdBy:user.name||user.email,updatedAt:now,updatedBy:user.name||user.email});
+    }
+   }
+  }
+ }
  if(patch.activityDiary){
   const previousIds=new Map((data.activityDiary||[]).map(x=>[sid(x.id),x]));
   for(const r of next.activityDiary||[]){const old=previousIds.get(sid(r.id));
