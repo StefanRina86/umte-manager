@@ -1,6 +1,8 @@
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const path=require('node:path');
+const fs=require('node:fs');
+const JSZip=require('jszip');
 const {chromium}=require('playwright');
 const root=path.join(__dirname,'..');
 const script=name=>path.join(root,name);
@@ -97,6 +99,7 @@ test('Mansione superiore mantiene la voce nelle competenze e il sostituto',async
  const state={peopleRecords:people,variations:[{personId:'OP2',date:'2026-11-27',shift:'C'}],leaveRequests:[],competencies:[]};
  const {browser,p}=await page(html,state);
  try{
+  await p.context().setDefaultTimeout(7000);
   await p.addScriptTag({path:script('mansioni-superiori-ui.js')});
   await p.getByRole('button',{name:'Mansioni superiori'}).click();
   const form=p.locator('#umteSuperiorDialog form');
@@ -113,5 +116,18 @@ test('Mansione superiore mantiene la voce nelle competenze e il sostituto',async
   assert.equal(d.records[0].manualContribution.allowances.superior,true);
   assert.equal(d.records[0].superiorReplacement.replacementCid,'OP2');
   assert.equal(d.saves,1);
+  await p.addScriptTag({path:require.resolve('jszip/dist/jszip.min.js')});
+  const panel=p.locator('#umteSuperiorDialog');
+  await panel.locator('input[type=month]').fill('2026-11');
+  await panel.locator('select').last().selectOption('Arona');
+  const request=p.waitForEvent('download');
+  await panel.getByRole('button',{name:'Esporta riepilogo XLSX'}).click();
+  const download=await request;
+  assert.match(download.suggestedFilename(),/MANSIONI_SUPERIORI_Arona_2026-11.xlsx/);
+  const zipped=await JSZip.loadAsync(fs.readFileSync(await download.path()));
+  const xml=await zipped.file('xl/worksheets/sheet1.xml').async('string');
+  assert.match(xml,/RIEPILOGO UTILIZZAZIONE IN MANSIONI DI LIVELLO SUPERIORE/);
+  assert.match(xml,/Capo Tecnico/);
+  assert.match(xml,/FERIE/);
  }finally{await browser.close();}
 });
