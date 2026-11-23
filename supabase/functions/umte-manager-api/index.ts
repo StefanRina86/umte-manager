@@ -339,6 +339,7 @@ export function applyPatch(data,patch,user){const next=structuredClone(data),per
     if(existing){
      if(existing.autoRglsEventId&&existing.autoRglsEventId!==event.id)throw Error('Straordinario RGLS già associato ad altro corso');
      existing.allowances={...(existing.allowances||{}),overtime:true};
+     if(!existing.manualOverride){existing.manualContribution={...(existing.manualContribution||{}),allowances:{...(existing.manualContribution?.allowances||existing.allowances||{}),overtime:true},overtimeStart:from,overtimeEnd:to,overtimeReason:note,sourceLabel:'Corso RGLS'};}
      existing.overtimeStart=from;existing.overtimeEnd=to;existing.overtimeReason=note;
      existing.overtimeGrossMinutes=gross;existing.overtimeBreakMinutes=pause;existing.overtimeNetMinutes=net;
      existing.autoRglsEventId=event.id;existing.status='updated';delete existing.approvedAt;delete existing.approvedBy;
@@ -346,7 +347,7 @@ export function applyPatch(data,patch,user){const next=structuredClone(data),per
     }else{
      next.competencies=next.competencies||[];
      next.competencies.push({id:'RGLS-'+sid(event.id)+'-'+pid+'-'+date,personId:pid,personName:person.displayName,nucleus:person.nucleus,date,
-      status:'updated',allowances:{overtime:true},overtimeStart:from,overtimeEnd:to,overtimeReason:note,
+      status:'updated',allowances:{overtime:true},manualContribution:{allowances:{overtime:true},overtimeStart:from,overtimeEnd:to,overtimeReason:note,sourceLabel:'Corso RGLS'},overtimeStart:from,overtimeEnd:to,overtimeReason:note,
       overtimeGrossMinutes:gross,overtimeBreakMinutes:pause,overtimeNetMinutes:net,autoRglsEventId:event.id,
       notes:note,source:'MF su riposo RGLS',createdAt:now,createdBy:user.name||user.email,updatedAt:now,updatedBy:user.name||user.email});
     }
