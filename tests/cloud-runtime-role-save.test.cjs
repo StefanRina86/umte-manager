@@ -52,3 +52,28 @@ test('online save failure retains local recovery and prevents refresh',async()=>
   assert.match(await page.evaluate(()=>localStorage.getItem('umte-manager-v01')),/TEST-1/);
  }finally{await browser.close();}
 });
+
+
+test('auditLog server-owned: no browser patch and no unnecessary revision update',async()=>{
+ const browser=await chromium.launch({headless:true});
+ try{
+  const page=await browser.newPage();
+  await env(page,'owner',false);
+  await page.evaluate(()=>{
+   const state=JSON.parse(localStorage.getItem('umte-manager-v01'));
+   state.auditLog=[{id:'CLIENT-FAKE-AUDIT',action:'synthetic'}];
+   localStorage.setItem('umte-manager-v01',JSON.stringify(state));
+  });
+  await page.waitForTimeout(180);
+  assert.equal(await page.evaluate(()=>window.__saves.length),0,'Client must never submit an auditLog-only change');
+  await page.evaluate(()=>{
+   const state=JSON.parse(localStorage.getItem('umte-manager-v01'));
+   state.activities.push({id:'SYNTHETIC-ACTIVITY'});
+   localStorage.setItem('umte-manager-v01',JSON.stringify(state));
+  });
+  await page.waitForFunction(()=>window.__saves.length>0);
+  const saves=await page.evaluate(()=>window.__saves);
+  assert.equal(saves.length,1);
+  assert.deepEqual(Object.keys(saves[0].body.patch),['activities'],'auditLog must not accompany a real patch');
+ }finally{await browser.close();}
+});
