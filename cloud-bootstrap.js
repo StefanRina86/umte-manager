@@ -124,7 +124,7 @@ async function open(){
   "  el('loginButton').addEventListener('click',()=>{location.replace('./?login=1');});\\n"+
   html.slice(legacyEndAt);
  const legacyBootStart="  try{setupOptions();updateCompetenceSelection();const savedProfile=";
- const legacyBootEnd="\\n})();\\n\\n</script>";
+ const legacyBootEnd="\n})();\n\n</script>";
  const bootStartAt=html.indexOf(legacyBootStart),bootEndAt=html.indexOf(legacyBootEnd,bootStartAt);
  if(bootStartAt<0||bootEndAt<0)throw Error('Protezione avvio non installata: versione dell’app non supportata.');
  const protectedBoot=[
@@ -140,7 +140,7 @@ async function open(){
   "   const retry=document.createElement('button');retry.type='button';retry.textContent='Riprova il caricamento';retry.style.cssText='padding:12px 18px;border-radius:8px;cursor:pointer';retry.onclick=()=>location.reload();",
   "   shield.append(title,detail,retry);document.body.append(shield);",
   "  }"
- ].join('\\n');
+ ].join('\n');
  html=html.slice(0,bootStartAt)+protectedBoot+html.slice(bootEndAt);
  // Insert at the actual document closing tag, never inside a JavaScript template containing </body>.
  const closingBody=html.toLowerCase().lastIndexOf('</body>');
@@ -154,9 +154,6 @@ async function open(){
  const oldUser="permissions:window.UMTE_SHARED.user.permissions}:profiles[profileKey]||profiles.viewer";
  if(!html.includes(oldUser))throw Error('Compatibilità login: identità personale non trovata');
  html=html.replace(oldUser,"permissions:window.UMTE_SHARED.user.permissions,personId:window.UMTE_SHARED.user.personId}:profiles[profileKey]||profiles.viewer");
- const partial="el('loginScreen').hidden=false;el('userRole').textContent='Avvio parziale · premere F5';";
- if(!html.includes(partial))throw Error('Compatibilità login: gestione errore non trovata');
- html=html.replace(partial,"el('loginScreen').hidden=false;el('userRole').textContent='Errore di avvio · riprova';const p=el('loginScreen').querySelector('p');if(p)p.textContent='Accesso verificato. Errore durante il caricamento: aggiorna la pagina per riprovare. Nessun profilo simulato attivato.';el('loginProfile').hidden=true;el('loginButton').textContent='Ricarica il gestionale';");
   document.open();document.write(html);document.close();
 }
 form.onsubmit=async e=>{e.preventDefault();const button=document.getElementById('enter');button.disabled=true;status.dataset.error='false';status.textContent='Accesso in corso…';let authenticated=false;try{const {error}=await cloud.auth.signInWithPassword({email:document.getElementById('email').value.trim(),password:document.getElementById('password').value});if(error)throw Error('Email o password non valide.');authenticated=true;document.getElementById('password').value='';await open();}catch(e){report(e,authenticated);}finally{button.disabled=false;}};
