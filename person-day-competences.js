@@ -52,12 +52,17 @@ function duplicate(record){
  const info=document.createElement('p');info.textContent=record.personName+' · '+record.date+' · '+Object.keys(record.allowances||{}).filter(k=>record.allowances[k]).map(k=>typeLabels[k]||k).join(', ');form.append(info);
  const grid=document.createElement('div');grid.className='umte-dup-grid';
  const inputs=new Map();
- for(const key of cloneEditable){
-  if(!canCloneValue(record[key])||record[key]===undefined||record[key]===null)continue;
+ const selectedTypes=Object.entries(record.allowances||{}).filter(([,value])=>Boolean(value)).map(([key])=>key);
+ const relevant=new Set(cloneEditable);
+ if(selectedTypes.includes('call'))for(const k of ['callTime','callStart','callEnd','callReason','callLocation','callPhonogram'])relevant.add(k);
+ if(selectedTypes.includes('overtime'))for(const k of ['overtimeStart','overtimeEnd','overtimeReason'])relevant.add(k);
+ for(const key of relevant){
+  if(record[key]!==undefined&&record[key]!==null&&!canCloneValue(record[key]))continue;
+  if(record[key]===undefined&&!((selectedTypes.includes('call')&&key.startsWith('call'))||(selectedTypes.includes('overtime')&&key.startsWith('overtime'))))continue;
   const label=document.createElement('label');label.textContent=fieldLabels[key]||key;
   const input=key==='notes'||key==='callReason'||key==='overtimeReason'||key==='travelDetails'?document.createElement('textarea'):document.createElement('input');
   if(input.tagName==='INPUT')input.type=/^(callTime|callStart|callEnd|overtimeStart|overtimeEnd)$/.test(key)?'time':'text';
-  input.value=String(record[key]);label.append(input);grid.append(label);inputs.set(key,input);
+  input.value=String(record[key]??'');label.append(input);grid.append(label);inputs.set(key,input);
  }
  if(!inputs.size){const label=document.createElement('label');label.textContent='Motivo / riferimento';const field=document.createElement('textarea');label.append(field);grid.append(label);inputs.set('notes',field);}
  form.append(grid);
@@ -78,7 +83,7 @@ function duplicate(record){
   next.createdBy=shared.user.name;next.updatedBy=shared.user.name;
   delete next.approvedAt;delete next.approvedBy;delete next.certifiedByRole;
   delete next.rejectedAt;delete next.rejectedBy;
-  delete next.diaryEntryIds;delete next.diaryContributions;
+  delete next.diaryEntryIds;delete next.diaryContributions;delete next.manualContribution;
   delete next.manualOverride;delete next.ctConfirmedAt;delete next.ctConfirmedBy;
   for(const [key,input] of inputs)next[key]=input.value.trim();
   if(!window.confirm('Registrare una seconda competenza per la stessa persona e giornata? La voce originale resterà invariata.'))return;
@@ -97,7 +102,20 @@ function host(){
  });
 }
 function line(tag,value,cls){const n=document.createElement(tag);n.textContent=String(value??'');if(cls)n.className=cls;return n;}
-function render(force=false){
+function enhanceCompetenceTable(){
+ const table=document.getElementById('competenceBody');if(!table||!mayCreate)return;
+ const byId=new Map(data().map(c=>[String(c.id),c]));
+ for(const row of table.querySelectorAll('tr')){
+  const trigger=row.querySelector('[data-edit-competence]');const id=trigger?.getAttribute('data-edit-competence');
+  if(!id||row.querySelector('.umte-duplicate-btn'))continue;
+  const record=byId.get(String(id));if(!record||!canUsePerson(record.personId))continue;
+  const action=document.createElement('button');action.type='button';action.className='umte-duplicate-btn';
+  action.textContent='Aggiungi un’altra dello stesso tipo';action.setAttribute('aria-label','Nuova registrazione dello stesso tipo per '+record.personName+' il '+record.date);
+  action.addEventListener('click',event=>{event.stopPropagation();duplicate(record);});
+  trigger.insertAdjacentElement('afterend',action);
+ }
+}
+function render(force=false){enhanceCompetenceTable();
  const modal=host();if(!modal||!selected)return;
  const {personId,date}=selected;
  if(!personId||!/^\d{4}-\d{2}-\d{2}$/.test(date))return;
@@ -151,4 +169,5 @@ const observer=new MutationObserver(()=>{
 });
 observer.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['open','hidden']});
 document.addEventListener('umte-render',()=>setTimeout(render,0));
+setTimeout(enhanceCompetenceTable,0);
 })();
