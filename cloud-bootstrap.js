@@ -151,8 +151,11 @@ async function open(){
  // Insert at the actual document closing tag, never inside a JavaScript template containing </body>.
  const closingBody=html.toLowerCase().lastIndexOf('</body>');
  if(closingBody<0)throw Error('Chiusura HTML applicazione mancante');
- html=html.slice(0,closingBody)+'<script src="competence-layout-fixes.js?v=20261123" defer></script><script src="rgls-overtime-ui.js?v=20261123b" defer></script><script src="course-availability-ui.js?v=20261123a" defer></script><script src="rapportino-non-programmato-ui.js?v=20261123a" defer></script><script src="mansioni-superiori-ui.js?v=20261123a" defer></script><script src="personal-event-reminder.js?v=20261123" defer></script><script src="guida-rapida.js?v=privacy-20261117" defer></script><script src="ted-document-archive.js?v=20261116" defer></script><script src="operational-ui-fixes.js?v=20261117" defer></script>'+html.slice(closingBody);
- const oldUser="permissions:window.UMTE_SHARED.user.permissions}:profiles[profileKey]||profiles.viewer";
+ html=html.slice(0,closingBody)+'<script src="competence-layout-fixes.js?v=20261123" defer></script><script src="accounting-template-fallback.js?v=20261123" defer></script><script src="rgls-overtime-ui.js?v=20261123b" defer></script><script src="course-availability-ui.js?v=20261123a" defer></script><script src="rapportino-non-programmato-ui.js?v=20261123a" defer></script><script src="mansioni-superiori-ui.js?v=20261123a" defer></script><script src="personal-event-reminder.js?v=20261123" defer></script><script src="guida-rapida.js?v=privacy-20261117" defer></script><script src="ted-document-archive.js?v=20261116" defer></script><script src="operational-ui-fixes.js?v=20261117" defer></script>'+html.slice(closingBody);
+ const accountingReady="const template=window.UMTE_TEMPLATES?.[type];";
+ if(!html.includes(accountingReady))throw Error('Generatore RP/straordinari non disponibile');
+ html=html.replace(accountingReady,"await (window.UMTE_MODEL_READY||Promise.resolve());const template=window.UMTE_TEMPLATES?.[type];");
+  const oldUser="permissions:window.UMTE_SHARED.user.permissions}:profiles[profileKey]||profiles.viewer";
  if(!html.includes(oldUser))throw Error('Compatibilità login: identità personale non trovata');
  html=html.replace(oldUser,"permissions:window.UMTE_SHARED.user.permissions,personId:window.UMTE_SHARED.user.personId}:profiles[profileKey]||profiles.viewer");
   document.open();document.write(html);document.close();
