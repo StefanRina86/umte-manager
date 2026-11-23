@@ -117,13 +117,15 @@ export function visibleState(data,user){
   const memberIds=teamMembers(data,user),ownActivityIds=assigned(data,user);
   for(const report of (data.activityDiary||[]))if(sid(report.createdByUserId)===sid(user.user_id))ownActivityIds.add(sid(report.activityId));
   d.leaveRequests=(d.leaveRequests||[]).filter(r=>sid(r.personId)===sid(user.person_id));
-  d.medicalAppointments=[];
+  // Un collega vede esclusivamente il proprio appuntamento e l'eventuale corso assegnato.
+  // Non esponiamo sede, motivo o nominativi di altri partecipanti nei profili di squadra.
+  d.medicalAppointments=(d.medicalAppointments||[]).filter(a=>sid(a.personId)===sid(user.person_id));
   d.activities=(d.activities||[]).filter(a=>ownActivityIds.has(sid(a.id)));
   d.activityDiary=(d.activityDiary||[]).filter(r=>ownActivityIds.has(sid(r.activityId))||sid(r.createdByUserId)===sid(user.user_id));
   d.competencies=(d.competencies||[]).filter(r=>memberIds.has(sid(r.personId)));
   d.variations=(d.variations||[]).filter(r=>memberIds.has(sid(r.personId)));
   d.peopleRecords=(d.peopleRecords||[]).filter(p=>memberIds.has(sid(p.id))).map(p=>{const {id,name,surname,displayName,nucleus,team,qualification,rotation,active,validities,skills}=p;return{id,name,surname,displayName,nucleus,team,qualification,rotation,active,...(role==='chief'?{validities,skills}:{})};});
-  d.trainingEvents=[];d.trainingCompletions=[];d.courseCatalogOverrides=[];d.safetyRecords=[];d.auditLog=[];d.presenceImportHistory=[];
+  d.trainingEvents=(d.trainingEvents||[]).filter(e=>(e.personIds||[]).some(id=>sid(id)===sid(user.person_id))).map(e=>({...e,personIds:[user.person_id]}));d.trainingCompletions=[];d.courseCatalogOverrides=[];d.safetyRecords=[];d.auditLog=[];d.presenceImportHistory=[];
   d.shiftRules=[];d.theoreticalRules=[];d.rotationJumps=[];d.manualLocations=[];
   d.energyMaintenanceHistory=[];d.ruleConfig={};d.activityPublications=role==='chief'?Object.fromEntries(Object.entries(d.activityPublications||{}).filter(([key])=>{try{const person=chiefHome(data,user);return key.endsWith('|'+person.nucleus+'|'+teamCode(person.team));}catch{return false;}})):{};d.locationCatalog={};d.odlCatalog=[];
  }
