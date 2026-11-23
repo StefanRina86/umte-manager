@@ -92,10 +92,10 @@ const trainingCatalog = [{"id":"CAT-ba06a4a378c3fcf0","title":"\"Aggiornamento p
 
 const sid=x=>String(x||'');
 const same=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
-const teamMembers=(data,user)=>{const own=(data.peopleRecords||[]).find(p=>sid(p.id)===sid(user.person_id));if(!own||!own.nucleus)return new Set([sid(user.person_id)]);return new Set((data.peopleRecords||[]).filter(p=>p.active!==false&&p.nucleus===own.nucleus&&String(p.team||'')===String(own.team||'')).map(p=>sid(p.id)).concat([sid(user.person_id)]));};
+const teamMembers=(data,user)=>{const own=(data.peopleRecords||[]).find(p=>sid(p.id)===sid(user.person_id));if(!own||!own.nucleus)return new Set([sid(user.person_id)]);return new Set((data.peopleRecords||[]).filter(p=>p.active!==false&&p.nucleus===own.nucleus&&(user.role==='chief'||String(p.team||'')===String(own.team||''))).map(p=>sid(p.id)).concat([sid(user.person_id)]));};
 const teamCode=value=>String(value||'').replace(/^Squadra\s*/i,'').trim();
 const chiefHome=(data,user)=>{const person=(data.peopleRecords||[]).find(p=>sid(p.id)===sid(user.person_id)&&p.active!==false);if(!person?.nucleus||!teamCode(person.team))throw Error('Capo Tecnico senza squadra attiva');return person;};
-const chiefOwn=(activity,person)=>activity?.nucleus===person.nucleus&&teamCode(activity.team)===teamCode(person.team);
+const chiefOwn=(activity,person)=>activity?.nucleus===person.nucleus;
 const chiefPublicationKey=(week,person)=>week+'|'+person.nucleus+'|'+teamCode(person.team);
 const assigned=(data,user)=>{const ids=teamMembers(data,user);return new Set((data.activities||[]).filter(a=>
  (a.people||[]).some(id=>ids.has(sid(id)))||
@@ -120,11 +120,11 @@ export function visibleState(data,user){
   // Un collega vede esclusivamente il proprio appuntamento e l'eventuale corso assegnato.
   // Non esponiamo sede, motivo o nominativi di altri partecipanti nei profili di squadra.
   d.medicalAppointments=(d.medicalAppointments||[]).filter(a=>sid(a.personId)===sid(user.person_id));
-  d.activities=(d.activities||[]).filter(a=>ownActivityIds.has(sid(a.id)));
+  d.activities=role==='chief'?(d.activities||[]):(d.activities||[]).filter(a=>ownActivityIds.has(sid(a.id)));
   d.activityDiary=(d.activityDiary||[]).filter(r=>ownActivityIds.has(sid(r.activityId))||sid(r.createdByUserId)===sid(user.user_id));
   d.competencies=(d.competencies||[]).filter(r=>memberIds.has(sid(r.personId)));
   d.variations=(d.variations||[]).filter(r=>memberIds.has(sid(r.personId)));
-  d.peopleRecords=(d.peopleRecords||[]).filter(p=>memberIds.has(sid(p.id))).map(p=>{const {id,name,surname,displayName,nucleus,team,qualification,rotation,active,validities,skills}=p;return{id,name,surname,displayName,nucleus,team,qualification,rotation,active,...(role==='chief'?{validities,skills}:{})};});
+  d.peopleRecords=(d.peopleRecords||[]).filter(p=>role==='chief'||memberIds.has(sid(p.id))).map(p=>{const {id,name,surname,displayName,nucleus,team,qualification,rotation,active,validities,skills}=p;return{id,name,surname,displayName,nucleus,team,qualification,rotation,active,...(role==='chief'&&memberIds.has(sid(p.id))?{validities,skills}:{})};});
   d.trainingEvents=(d.trainingEvents||[]).filter(e=>(e.personIds||[]).some(id=>sid(id)===sid(user.person_id))).map(e=>({...e,personIds:[user.person_id]}));d.trainingCompletions=[];d.courseCatalogOverrides=[];d.safetyRecords=[];d.auditLog=[];d.presenceImportHistory=[];
   d.shiftRules=[];d.theoreticalRules=[];d.rotationJumps=[];d.manualLocations=[];
   d.energyMaintenanceHistory=[];d.ruleConfig={};d.activityPublications=role==='chief'?Object.fromEntries(Object.entries(d.activityPublications||{}).filter(([key])=>{try{const person=chiefHome(data,user);return key.endsWith('|'+person.nucleus+'|'+teamCode(person.team));}catch{return false;}})):{};d.locationCatalog={};d.odlCatalog=[];
@@ -135,6 +135,7 @@ export function visibleState(data,user){
 export function visibleBaseline(baseline,data,user){
  const b=structuredClone(baseline);
  if(!teamScopedRoles.includes(user.role))return b;
+ if(user.role==='chief'){b.safetyRecords=[];b.trainingRecords=[];const out={};for(const key of ['meta','people','rules','safetyRecords','shiftCodes','shiftDefinitions','shiftPeople','shifts','trainingDictionaries','trainingRecords'])if(Object.prototype.hasOwnProperty.call(b,key))out[key]=b[key];return out;}
  const ids=teamMembers(data,user),index=new Map(),filtered=[];
  for(let i=0;i<(b.shiftPeople||[]).length;i++){
   const p=b.shiftPeople[i];if(ids.has(sid(p[0]))){index.set(i,filtered.length);filtered.push(p);}
@@ -151,6 +152,33 @@ export function visibleBaseline(baseline,data,user){
 }
 export function applyPatch(data,patch,user){const next=structuredClone(data),perms=permissions[user.role]||[];for(const [key,value] of Object.entries(patch)){if(key==='auditLog')continue;
  if(key==='peopleRecords'&&(!Array.isArray(value)||value.some(p=>!p||typeof p!=='object'||Array.isArray(p)||!p.id)||new Set(value.map(p=>String(p.id))).size!==value.length))throw Error('Anagrafica personale non valida: nessuna scheda vuota o CID duplicato consentito');
+ if(key==='trainingEvents'){
+  if(!perms.includes('schedulePeopleEvents'))throw Error('Pianificazione corsi non autorizzata');
+  if(!Array.isArray(value))throw Error('Elenco corsi non valido');
+  const closed=new Set(['approved','confirmed','accepted']),absent=new Set(['C','MM','INF','ASP','AS','CP','CS','H','PS','PM','PL','PF','RFS','AG','AR','DS']);
+  const unavailable=(pid,day,event)=>{
+   const leave=(data.leaveRequests||[]).find(r=>sid(r.personId)===pid&&r.from<=day&&r.to>=day&&closed.has(String(r.status||'').toLowerCase()));
+   if(leave)return 'congedo confermato';
+   const variation=(data.variations||[]).filter(v=>sid(v.personId)===pid&&v.date===day).at(-1);
+   if(variation&&(variation.sourceLeaveId||absent.has(String(variation.shift||variation.code||'').toUpperCase())))return 'assenza prevista';
+   if((data.medicalAppointments||[]).some(m=>sid(m.personId)===pid&&m.date===day&&m.start<event.end&&m.end>event.start))return 'visita sovrapposta';
+   return '';
+  };
+  for(const event of value){
+   const old=(data.trainingEvents||[]).find(e=>sid(e.id)===sid(event.id));
+   if(same(old,event))continue;
+   if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(String(event.startDate||''))||!/^\\d{4}-\\d{2}-\\d{2}$/.test(String(event.endDate||''))||event.endDate<event.startDate)throw Error('Date corso non valide');
+   const start=new Date(event.startDate+'T12:00:00Z'),end=new Date(event.endDate+'T12:00:00Z');
+   if((end-start)/86400000>370)throw Error('Durata corso eccessiva');
+   for(const pid of event.personIds||[]){
+    if(!(data.peopleRecords||[]).some(p=>sid(p.id)===sid(pid)&&p.active!==false))throw Error('Dipendente non attivo per corso');
+    for(let d=new Date(start);d<=end;d.setUTCDate(d.getUTCDate()+1)){
+     const day=d.toISOString().slice(0,10),reason=unavailable(sid(pid),day,event);
+     if(reason)throw Error('Iscrizione al corso non consentita: '+pid+' '+day+' ('+reason+')');
+    }
+   }
+  }
+ }
  if(key==='leaveRequests'){
  const existing=data.leaveRequests||[],visible=managerRoles.includes(user.role)?existing:existing.filter(r=>sid(r.personId)===sid(user.person_id));
  if(!perms.includes('variation')&&!perms.includes('diaryEdit'))throw Error('Richiesta ferie non autorizzata');
@@ -188,6 +216,20 @@ export function applyPatch(data,patch,user){const next=structuredClone(data),per
  }
  if(key==='peopleRecords'&&!perms.includes('adminManage')&&perms.includes('schedulePeopleEvents')){next[key]=mergeRows(data[key]||[],data[key]||[],value,(r,old)=>{if(!old)throw Error('Nuovo personale non autorizzato');const a={...r},b={...old};for(const f of ['phone','email','contactsSeedVersion','contactsEditedAt','updatedAt','updatedBy']){delete a[f];delete b[f];}if(!same(a,b))throw Error('Solo contatti modificabili');});continue;}
  if(!allowed[key]||!perms.includes(allowed[key])&&!(key==='activities'&&user.role==='preposto'))throw Error('Operazione non autorizzata: '+key);
+ if(user.role==='chief'&&(key==='variations'||key==='competencies')){
+  const memberIds=teamMembers(data,user),original=data[key]||[],visible=visibleState(data,user)[key]||[];
+  next[key]=mergeRows(original,visible,value,(row,old)=>{
+   if(!memberIds.has(sid(row.personId))||old&&sid(old.personId)!==sid(row.personId))throw Error('Modifica fuori dalla giurisdizione del proprio nucleo');
+   if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(String(row.date||'')))throw Error('Data non valida');
+   if(key==='variations'&&!String(row.shift||row.code||'').trim())throw Error('Turno non valido');
+   if(key==='competencies'){
+    for(const field of ['approvedAt','approvedBy','rejectedAt','rejectedBy'])
+     if(!same(row[field],old?.[field]))throw Error('Convalida competenza riservata al responsabile');
+    if(row.status==='approved'&&old?.status!=='approved')throw Error('Convalida competenza riservata al responsabile');
+   }
+  });
+  continue;
+ }
  if(user.role==='chief'&&key==='activities'){
   const person=chiefHome(data,user),original=data.activities||[],visible=visibleState(data,user).activities||[];
   if(!Array.isArray(value))throw Error('Elenco attività non valido');
@@ -197,10 +239,10 @@ export function applyPatch(data,patch,user){const next=structuredClone(data),per
    if(!id||ids.has(id))throw Error('Identificativo attività non valido');ids.add(id);
    if(old&&!visibleIds.has(id))throw Error('Attività non autorizzata');
    if(old&&same(activity,old))continue;
-   if(old&&!chiefOwn(old,person)||!chiefOwn(activity,person))throw Error('Attività fuori dalla propria squadra');
+   if(old&&!chiefOwn(old,person)||!chiefOwn(activity,person))throw Error('Attività fuori dal proprio nucleo');
    if(old?.sourceCourseEventId)throw Error('Attività corso gestita dalla pagina corsi');
-   if((activity.people||[]).some(pid=>!teamMembers(data,user).has(sid(pid))&&!(old?.people||[]).map(sid).includes(sid(pid))))throw Error('Assegnazione fuori squadra non autorizzata');
-   if(Object.values(activity.roleAssignments||{}).some(pid=>pid&&!teamMembers(data,user).has(sid(pid))&&!Object.values(old?.roleAssignments||{}).map(sid).includes(sid(pid))))throw Error('Incarico fuori squadra non autorizzato');
+   if((activity.people||[]).some(pid=>!teamMembers(data,user).has(sid(pid))&&!(old?.people||[]).map(sid).includes(sid(pid))))throw Error('Assegnazione fuori nucleo non autorizzata');
+   if(Object.values(activity.roleAssignments||{}).some(pid=>pid&&!teamMembers(data,user).has(sid(pid))&&!Object.values(old?.roleAssignments||{}).map(sid).includes(sid(pid))))throw Error('Incarico fuori nucleo non autorizzato');
    if(activity.status==='published'&&old?.status!=='published'){
     const day=new Date(String(activity.date||'')+'T12:00:00Z');
     if(Number.isNaN(+day))throw Error('Data attività non valida');
