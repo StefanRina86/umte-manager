@@ -36,7 +36,7 @@ test('anagrafica rifiuta schede nulle e CID duplicati senza modificare i dati',(
 for(const role of Object.keys(permissions))test('stato visibile e limiti '+role,()=>{
  const data=fixture(),u=user(role),visible=visibleState(data,u);
  assert.equal(Array.isArray(visible.activities),true);
- assert.equal(visible.activities.length,['chief','preposto','viewer'].includes(role)?1:2);
+ assert.equal(visible.activities.length,['preposto','viewer'].includes(role)?1:2);
  assert.equal(visible.operationalRequests.length,0);
  assert.throws(()=>applyPatch(data,{__forbidden_test__:true},u),/non autorizzata/);
 });
@@ -93,11 +93,11 @@ test('capo tecnico crea, modifica ed elimina attività della propria squadra',()
 });
 test('capo tecnico non può creare o spostare attività fuori squadra',()=>{
  const data=fixture(),u=user('chief','T2','CT1'),own=data.activities[0],other=data.activities[1];
- assert.throws(()=>applyPatch(data,{activities:[own,{...other,id:'A3'}]},u),/fuori dalla propria squadra/);
- assert.throws(()=>applyPatch(data,{activities:[{...own,nucleus:'Gallarate'}]},u),/fuori dalla propria squadra/);
- assert.throws(()=>applyPatch(data,{activities:[{...own,people:['OP1','OP3']}]},u),/Assegnazione fuori squadra/);
- assert.throws(()=>applyPatch(data,{activities:[{...own,roleAssignments:{preposto:'OP3'}}]},u),/Incarico fuori squadra/);
- assert.throws(()=>applyPatch(data,{activities:[{...other,title:'Alterata'}]},u),/non autorizzata/);
+ assert.throws(()=>applyPatch(data,{activities:[own,{...other,id:'A3'}]},u),/fuori dal proprio nucleo/);
+ assert.throws(()=>applyPatch(data,{activities:[{...own,nucleus:'Gallarate'}]},u),/fuori dal proprio nucleo/);
+ assert.throws(()=>applyPatch(data,{activities:[{...own,people:['OP1','OP3']}]},u),/Assegnazione fuori nucleo/);
+ assert.throws(()=>applyPatch(data,{activities:[{...own,roleAssignments:{preposto:'OP3'}}]},u),/Incarico fuori nucleo/);
+ assert.throws(()=>applyPatch(data,{activities:[{...other,title:'Alterata'}]},u),/sola lettura/);
 });
 test('capo tecnico pubblica solo la propria settimana e conserva le pubblicazioni generali',()=>{
  const data=fixture(),u=user('chief','T2','CT1'),week='2026-11-16',key=week+'|Arona|1';
@@ -152,4 +152,35 @@ test('Corso visibile a chi partecipa senza elenco di altri colleghi',()=>{
  assert.equal(visible.trainingEvents[0].id,'EV1');
  assert.deepEqual(Array.from(visible.trainingEvents[0].personIds),['OP1']);
  assert.equal(visibleState(data,user('administrative')).trainingEvents.length,2);
+});
+
+
+test('CT consulta altri nuclei ma può variare turni e competenze solo nel proprio nucleo',()=>{
+ const data=fixture(),chief=user('chief','T2','CT1');
+ data.peopleRecords.push({id:'OP4',displayName:'Altro operatore Arona',nucleus:'Arona',team:'3',active:true});
+ data.variations=[{id:'V1',personId:'OP1',date:'2026-11-24',shift:'M'},{id:'V2',personId:'OP3',date:'2026-11-24',shift:'P'}];
+ data.competencies=[{id:'K1',personId:'OP2',date:'2026-11-24',allowances:{line:true}},{id:'K2',personId:'OP3',date:'2026-11-24',allowances:{line:true}}];
+ const view=visibleState(data,chief);
+ assert.equal(view.activities.length,2,'CT sees all activities');
+ assert.equal(view.peopleRecords.length,5,'CT can view all nuclei');
+ assert.equal(view.variations.length,1,'CT only receives editable variations of own nucleus');
+ assert.equal(view.competencies.length,1,'CT only receives own nucleus competence data');
+ const v=applyPatch(data,{variations:[{...view.variations[0],shift:'N'},{id:'V3',personId:'OP4',date:'2026-11-25',shift:'M'}]},chief);
+ assert.equal(v.variations.find(r=>r.id==='V2').shift,'P');
+ assert.equal(v.variations.find(r=>r.id==='V3').shift,'M');
+ assert.throws(()=>applyPatch(data,{variations:[{...view.variations[0]},{id:'VX',personId:'OP3',date:'2026-11-25',shift:'M'}]},chief),/fuori dalla giurisdizione/);
+ const c=applyPatch(data,{competencies:[...view.competencies,{id:'K3',personId:'OP4',date:'2026-11-25',status:'draft',allowances:{overtime:true}}]},chief);
+ assert.equal(c.competencies.find(r=>r.id==='K2').personId,'OP3');
+ assert.throws(()=>applyPatch(data,{competencies:[...view.competencies,{id:'KX',personId:'OP3',date:'2026-11-25'}]},chief),/fuori dalla giurisdizione/);
+});
+test('Corso non iscrive lavoratore in congedo o malattia, ma ammette RGLS per computo straordinario',()=>{
+ const data=fixture(),owner=user('owner');
+ const course={id:'C1',startDate:'2026-11-27',endDate:'2026-11-27',start:'08:00',end:'16:36',personIds:['OP1']};
+ data.leaveRequests=[{id:'L1',personId:'OP1',from:'2026-11-27',to:'2026-11-27',status:'approved'}];
+ assert.throws(()=>applyPatch(data,{trainingEvents:[course]},owner),/congedo confermato/);
+ data.leaveRequests=[];
+ data.variations=[{id:'V1',personId:'OP1',date:'2026-11-27',shift:'MM'}];
+ assert.throws(()=>applyPatch(data,{trainingEvents:[course]},owner),/assenza prevista/);
+ data.variations=[{id:'V1',personId:'OP1',date:'2026-11-27',shift:'RGLS'}];
+ assert.equal(applyPatch(data,{trainingEvents:[course]},owner).trainingEvents.length,1);
 });
