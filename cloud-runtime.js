@@ -50,7 +50,7 @@ const box=()=>{let b=document.getElementById('sharedSaveStatus');if(!b){b=docume
    });
    revision=outcome.result.revision;
    baseline=structuredClone(target);
-   const serverGeneratedFields=Object.keys(patch).some(k=>k==='activityDiary'||k==='operationalRequests'||k==='activityPublications'&&shared.user.role==='chief');
+   const serverGeneratedFields=Object.keys(patch).some(k=>k==='activityDiary'||k==='operationalRequests'||k==='trainingEvents'||k==='activityPublications'&&shared.user.role==='chief');
    if(outcome.retried||serverGeneratedFields){
      requiresReload=true;
      box().textContent=outcome.retried?'Salvataggio riuscito dopo un conflitto. Aggiorna il gestionale prima di altre modifiche. ':'Salvato nell’archivio condiviso. Aggiorna il gestionale prima di altre modifiche per caricare i dati completati dal server. ';
