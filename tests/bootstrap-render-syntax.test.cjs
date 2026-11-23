@@ -16,7 +16,7 @@ test('authenticated bootstrap produces complete, syntactically valid application
  const window={UMTE_CLOUD_CONFIG:{url:'https://synthetic.invalid',key:'synthetic'},supabase:{createClient:()=>cloud},fetch:async url=>url==='app.html'?{ok:true,text:async()=>app}:{ok:true,json:async()=>({revision:17,data:{},baseline:{},capabilities:{energyMaintenance:true},user:{role:'owner',name:'Test',permissions:[]}})}};
  const context={window,document,location:{href:'https://synthetic.invalid/',origin:'https://synthetic.invalid',search:''},URL,URLSearchParams,localStorage:{removeItem(){}}};
  await vm.runInNewContext(bootstrap,context,{filename:'cloud-bootstrap.js'});
- assert.ok(rendered.length>app.length,'application was written after authentication');
+ assert.ok(rendered.length>app.length,'application was written after authentication: '+elements.status.textContent);
  assert.ok(rendered.includes('function visibleActivities()'),'weekly activities remain present');
  assert.ok(!rendered.includes('Warning: truncated output'),'tool output must never become source code');
  let count=0;
