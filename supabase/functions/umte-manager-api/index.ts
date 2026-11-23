@@ -167,7 +167,7 @@ export function applyPatch(data,patch,user){const next=structuredClone(data),per
   for(const event of value){
    const old=(data.trainingEvents||[]).find(e=>sid(e.id)===sid(event.id));
    if(same(old,event))continue;
-   if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(String(event.startDate||''))||!/^\\d{4}-\\d{2}-\\d{2}$/.test(String(event.endDate||''))||event.endDate<event.startDate)throw Error('Date corso non valide');
+   if(!/^\d{4}-\d{2}-\d{2}$/.test(String(event.startDate||''))||!/^\d{4}-\d{2}-\d{2}$/.test(String(event.endDate||''))||event.endDate<event.startDate)throw Error('Date corso non valide');
    const start=new Date(event.startDate+'T12:00:00Z'),end=new Date(event.endDate+'T12:00:00Z');
    if((end-start)/86400000>370)throw Error('Durata corso eccessiva');
    for(const pid of event.personIds||[]){
@@ -220,7 +220,7 @@ export function applyPatch(data,patch,user){const next=structuredClone(data),per
   const memberIds=teamMembers(data,user),original=data[key]||[],visible=visibleState(data,user)[key]||[];
   next[key]=mergeRows(original,visible,value,(row,old)=>{
    if(!memberIds.has(sid(row.personId))||old&&sid(old.personId)!==sid(row.personId))throw Error('Modifica fuori dalla giurisdizione del proprio nucleo');
-   if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(String(row.date||'')))throw Error('Data non valida');
+   if(!/^\d{4}-\d{2}-\d{2}$/.test(String(row.date||'')))throw Error('Data non valida');
    if(key==='variations'&&!String(row.shift||row.code||'').trim())throw Error('Turno non valido');
    if(key==='competencies'){
     for(const field of ['approvedAt','approvedBy','rejectedAt','rejectedBy'])
