@@ -146,11 +146,6 @@ async function open(){
  const closingBody=html.toLowerCase().lastIndexOf('</body>');
  if(closingBody<0)throw Error('Chiusura HTML applicazione mancante');
  html=html.slice(0,closingBody)+'<script src="guida-rapida.js?v=privacy-20261117" defer></script><script src="ted-document-archive.js?v=20261116" defer></script><script src="operational-ui-fixes.js?v=20261117" defer></script>'+html.slice(closingBody);
- const unsafeLogin="el('loginButton').addEventListener('click',()=>{\n    try{login(el('loginProfile').value);}catch(error){console.error(error);el('loginScreen').hidden=true;el('userName').textContent=(profiles[el('loginProfile').value]||profiles.viewer).name;el('userRole').textContent='Accesso di emergenza · ricaricare se alcune funzioni non rispondono';}\n  });";
- const safeLogin="el('loginButton').addEventListener('click',()=>{location.reload();});";
- // Un avvio fallito non deve permettere di entrare con un profilo simulato.
- if(!html.includes(unsafeLogin))throw Error('Compatibilità login: vecchio accesso simulato non riconosciuto');
- html=html.replace(unsafeLogin,safeLogin);
  const oldUser="permissions:window.UMTE_SHARED.user.permissions}:profiles[profileKey]||profiles.viewer";
  if(!html.includes(oldUser))throw Error('Compatibilità login: identità personale non trovata');
  html=html.replace(oldUser,"permissions:window.UMTE_SHARED.user.permissions,personId:window.UMTE_SHARED.user.personId}:profiles[profileKey]||profiles.viewer");
