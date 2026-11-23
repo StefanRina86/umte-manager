@@ -147,3 +147,24 @@ test('turn variations without stable IDs do not merge independently',()=>{
  });
  assert.equal(result.safe,false);
 });
+
+
+test('competenza chiamata salvata mentre un collega inserisce un altro record non si perde',async()=>{
+ const store=backend({competencies:[]}),base=store.snapshot();
+ await Promise.all([
+  run(store,base,{competencies:[{id:'CALL-1',personId:'940702',date:'2026-11-17',allowances:{call:true}}]}),
+  run(store,base,{competencies:[{id:'OVT-2',personId:'950141',date:'2026-11-17',allowances:{overtime:true}}]})
+ ]);
+ const entries=store.snapshot().data.competencies;
+ assert.equal(entries.length,2);
+ assert.deepEqual(entries.map(e=>e.id).sort(),['CALL-1','OVT-2']);
+});
+test('competenza identica modificata da due colleghi rimane protetta',async()=>{
+ const store=backend({competencies:[{id:'CALL-1',notes:'old'}]}),base=store.snapshot();
+ const results=await Promise.allSettled([
+  run(store,base,{competencies:[{id:'CALL-1',notes:'first'}]}),
+  run(store,base,{competencies:[{id:'CALL-1',notes:'second'}]})
+ ]);
+ assert.equal(results.filter(r=>r.status==='fulfilled').length,1);
+ assert.equal(results.filter(r=>r.status==='rejected').length,1);
+});
