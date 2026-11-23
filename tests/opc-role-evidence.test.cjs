@@ -47,8 +47,8 @@ test('baseline 2026 visibile, rapportini 2027 candidati e validita formale invar
   await page.addScriptTag({path:script});
   const text=await page.locator('#umteOpcRoleEvidence').innerText();
   assert.match(text,/2026: OK gestionale dichiarato/);
-  assert.match(text,/2027: 1 rapportini conclusi/);
-  assert.match(text,/Nessuna abilitazione convalidata automaticamente/);
+  assert.match(text,/Rapportini conclusi con presenza documentata nel 2027: 1/);
+  assert.match(text,/le scadenze ufficiali restano invariate/);
   assert.equal(await page.evaluate(()=>JSON.stringify(window.UMTELeave.people()[0])===window.__before),true);
  }finally{await browser.close();}
 });
