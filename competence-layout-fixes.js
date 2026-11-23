@@ -24,6 +24,24 @@ style.textContent=`
 @media(max-width:680px){#competenceDialog .competence-options{grid-template-columns:1fr!important}#competenceDialog .conditional-details,#competenceDialog .conditional-details.three{grid-template-columns:1fr!important}#competenceDialog #callDetails label.span-2{grid-column:auto}#competenceDialog .modal-actions{flex-wrap:wrap}}
 `;
 document.head.append(style);
+function reflectCertification(){
+ const rows=document.querySelectorAll('#competenceBody tr');
+ const records=new Map((window.UMTELeave?.state?.competencies||[]).map(c=>[String(c.id),c]));
+ for(const row of rows){
+  const key=row.querySelector('[data-edit-competence]')?.getAttribute('data-edit-competence');
+  if(!key)continue;
+  const record=records.get(String(key)),badge=row.querySelector('td:nth-child(6) .status');
+  if(!record||!badge)continue;
+  const label=record.status==='approved'?'Certificata':record.status==='imported'?'Storico importato':'Da sincronizzare';
+  if(badge.textContent!==label)badge.textContent=label;
+  const updated=row.querySelector('td:nth-child(6) .cell-meta');
+  if(updated&&record.status==='approved'&&record.approvedBy){const info='Certificata da '+record.approvedBy;if(!updated.textContent.includes(info))updated.textContent=info;}
+ }
+}
+const table=document.getElementById('competenceBody');
+if(table){let scheduled=false;new MutationObserver(()=>{if(scheduled)return;scheduled=true;queueMicrotask(()=>{scheduled=false;reflectCertification();});}).observe(table,{childList:true,subtree:true});reflectCertification();}
+document.addEventListener('umte-render',reflectCertification);
+
 const note=document.getElementById('activityNotes');
 if(note&&!document.getElementById('umteSupportAgreementHint')){
  const info=document.createElement('p');info.id='umteSupportAgreementHint';info.className='fieldset-help umte-support-agreement';
