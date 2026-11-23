@@ -184,3 +184,36 @@ test('Corso non iscrive lavoratore in congedo o malattia, ma ammette RGLS per co
  data.variations=[{id:'V1',personId:'OP1',date:'2026-11-27',shift:'RGLS'}];
  assert.equal(applyPatch(data,{trainingEvents:[course]},owner).trainingEvents.length,1);
 });
+
+
+test('corso MF sul teorico RGLS genera tutto lo straordinario netto con pausa',()=>{
+ const data=fixture(),owner=user('owner');
+ const event={id:'C-RGLS-1',title:'Corso prova',startDate:'2026-11-27',endDate:'2026-11-27',start:'08:00',end:'16:36',
+  personIds:['OP1'],dayShifts:[{personId:'OP1',date:'2026-11-27',before:'RGLS',theoretical:'RGLS',shiftCode:'MF'}]};
+ const next=applyPatch(data,{trainingEvents:[event]},owner);
+ const record=next.competencies.find(x=>x.personId==='OP1'&&x.date==='2026-11-27');
+ assert.ok(record,'Competenza straordinario generata');
+ assert.equal(record.allowances.overtime,true);
+ assert.equal(record.overtimeGrossMinutes,516);
+ assert.equal(record.overtimeBreakMinutes,60);
+ assert.equal(record.overtimeNetMinutes,456);
+ assert.match(record.overtimeReason,/7h36/);
+ assert.equal(record.overtimeStart,'08:00');
+ assert.equal(record.overtimeEnd,'16:36');
+ assert.equal(applyPatch(next,{trainingEvents:[event]},owner).competencies.filter(x=>x.personId==='OP1').length,1);
+});
+test('preposto apre TE-D non programmato solo nella propria squadra senza cancellare altre attività',()=>{
+ const data=fixture(),u=user('preposto');
+ const unplanned={id:'UNPL-TEST1',title:'Intervento reale non pianificato',date:'2026-11-23',start:'09:00',end:'12:00',
+  nucleus:'Arona',team:'Squadra 1',location:'Stazione Arona',source:'TE-D non programmato',
+  unplanned:true,people:['OP1','OP2'],roles:[],roleAssignments:{},odls:[],status:'ready'};
+ const visible=visibleState(data,u).activities;
+ const next=applyPatch(data,{activities:[...visible,unplanned]},u);
+ assert.equal(next.activities.length,3);
+ assert.equal(next.activities.find(x=>x.id==='A2').nucleus,'Gallarate');
+ assert.equal(next.activities.find(x=>x.id==='UNPL-TEST1').unplanned,true);
+ const entry={id:'D-UNPL1',activityId:'UNPL-TEST1',date:'2026-11-23',actualPeopleIds:['OP1','OP2'],materialsUsed:[],materialsRemoved:[]};
+ assert.equal(applyPatch(next,{activityDiary:[entry]},u).activityDiary.length,1);
+ assert.throws(()=>applyPatch(data,{activities:[...visible,{...unplanned,id:'UNPL-TEST2',people:['OP1','OP3']}]},u),/non autorizzata/);
+ assert.throws(()=>applyPatch(data,{activities:[...visible,{...unplanned,id:'UNPL-TEST3',nucleus:'Gallarate'}]},u),/non autorizzata/);
+});
