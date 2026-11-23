@@ -121,3 +121,35 @@ test('capo tecnico non elimina attività con un rapportino',()=>{
  const data=fixture(),u=user('chief','T2','CT1');data.activityDiary=[{id:'D1',activityId:'A1',createdByUserId:'OTHER'}];
  assert.throws(()=>applyPatch(data,{activities:[]},u),/rapportino protetta/);
 });
+
+
+test('Capo Tecnico vede da oggi la visita di domani assegnata al suo CID, non quella di altri',()=>{
+ const data=fixture();
+ data.medicalAppointments=[
+  {id:'MED-ROSATI',personId:'OP1',date:'2026-11-24',start:'08:00',end:'13:00',visibilityFrom:'2026-11-23',location:'Riservato',reason:'Dati sanitari'},
+  {id:'MED-ALTRO',personId:'OP2',date:'2026-11-24',start:'09:00',end:'11:00',location:'Riservato'}
+ ];
+ const chief=visibleState(data,user('chief'));
+ assert.equal(chief.medicalAppointments.length,1);
+ assert.equal(chief.medicalAppointments[0].id,'MED-ROSATI');
+ assert.equal(chief.medicalAppointments[0].personId,'OP1');
+ assert.equal(chief.medicalAppointments[0].date,'2026-11-24');
+ assert.equal(chief.medicalAppointments[0].location,undefined);
+ assert.equal(chief.medicalAppointments[0].reason,undefined);
+ assert.equal(chief.medicalAppointments[0].visibilityFrom,'2026-11-23');
+ assert.equal(visibleState(data,user('preposto')).medicalAppointments.length,1);
+ assert.equal(visibleState(data,user('viewer','U2','OP2')).medicalAppointments[0].id,'MED-ALTRO');
+ assert.equal(visibleState(data,user('administrative')).medicalAppointments.length,2);
+});
+test('Corso visibile a chi partecipa senza elenco di altri colleghi',()=>{
+ const data=fixture();
+ data.trainingEvents=[
+  {id:'EV1',type:'course',title:'Formazione',startDate:'2026-11-24',endDate:'2026-11-24',personIds:['OP1','OP2']},
+  {id:'EV2',type:'course',title:'Altro nucleo',startDate:'2026-11-24',endDate:'2026-11-24',personIds:['OP3']}
+ ];
+ const visible=visibleState(data,user('chief'));
+ assert.equal(visible.trainingEvents.length,1);
+ assert.equal(visible.trainingEvents[0].id,'EV1');
+ assert.deepEqual(Array.from(visible.trainingEvents[0].personIds),['OP1']);
+ assert.equal(visibleState(data,user('administrative')).trainingEvents.length,2);
+});
