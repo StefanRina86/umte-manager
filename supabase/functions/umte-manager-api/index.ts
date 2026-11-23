@@ -332,7 +332,7 @@ export function applyPatch(data,patch,user){const next=structuredClone(data),per
     const minutes=t=>Number(t.slice(0,2))*60+Number(t.slice(3,5));
     let gross=minutes(to)-minutes(from);if(gross<0)gross+=1440;
     if(!gross)throw Error('Durata corso RGLS non valida');
-    const pause=gross>300?60:0,net=Math.max(0,gross-pause);
+    const started=minutes(from),pause=gross>300&&started<=780&&started+gross>=840?60:0,net=Math.max(0,gross-pause);
     const person=(next.peopleRecords||[]).find(x=>sid(x.id)===pid);
     if(!person)throw Error('Personale RGLS non disponibile');
     const existing=(next.competencies||[]).find(x=>sid(x.personId)===pid&&x.date===date);
