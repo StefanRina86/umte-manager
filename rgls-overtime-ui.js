@@ -8,7 +8,7 @@ function calculate(start,end){
  let gross=minutes(end)-minutes(start);if(!Number.isFinite(gross))return null;
  if(gross<0)gross+=1440;
  if(!gross)return null;
- const pause=gross>300?60:0,net=gross-pause;
+ const startMinutes=minutes(start),pause=gross>300&&startMinutes<=780&&startMinutes+gross>=840?60:0,net=gross-pause;
  return {grossMinutes:gross,breakMinutes:pause,netMinutes:net,label:Math.floor(net/60)+'h'+String(net%60).padStart(2,'0')};
 }
 root.UMTERGLSOvertime={calculate};
