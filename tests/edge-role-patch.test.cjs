@@ -25,6 +25,13 @@ function fixture(){return {
   {id:'A2',title:'Altra attività',nucleus:'Gallarate',team:'Squadra 2',people:['OP3'],status:'ready',odls:[]}
  ],activityDiary:[],leaveRequests:[],competencies:[],operationalRequests:[],medicalAppointments:[],trainingEvents:[],trainingCompletions:[],courseCatalogOverrides:[],safetyRecords:[],auditLog:[]};}
 const user=(role,id='T1',person_id='OP1')=>({role,user_id:id,person_id,name:'Profilo prova',email:'prova@example.invalid'});
+test('anagrafica rifiuta schede nulle e CID duplicati senza modificare i dati',()=>{
+ const data=fixture(),u=user('owner');
+ const original=JSON.stringify(data);
+ assert.throws(()=>applyPatch(data,{peopleRecords:[...data.peopleRecords,null]},u),/Anagrafica personale non valida/);
+ assert.throws(()=>applyPatch(data,{peopleRecords:[...data.peopleRecords,{...data.peopleRecords[0]}]},u),/Anagrafica personale non valida/);
+ assert.equal(JSON.stringify(data),original);
+});
 
 for(const role of Object.keys(permissions))test('stato visibile e limiti '+role,()=>{
  const data=fixture(),u=user(role),visible=visibleState(data,u);
