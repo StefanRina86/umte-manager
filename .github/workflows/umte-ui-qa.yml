@@ -50,7 +50,7 @@ jobs:
           npm --version
           npx playwright --version
           npx playwright install --dry-run chromium
-      - name: Verify new workflows: courses, RGLS, leave, unplanned TE-D, superior duties
+      - name: 'Verify new workflows: courses, RGLS, leave, unplanned TE-D, superior duties'
         if: always()
         shell: bash
         run: |
