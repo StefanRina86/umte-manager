@@ -222,3 +222,20 @@ test('preposto apre TE-D non programmato solo nella propria squadra senza cancel
  assert.throws(()=>applyPatch(data,{activities:[...visible,{...unplanned,id:'UNPL-TEST2',people:['OP1','OP3']}]},u),/non autorizzata/);
  assert.throws(()=>applyPatch(data,{activities:[...visible,{...unplanned,id:'UNPL-TEST3',nucleus:'Gallarate'}]},u),/non autorizzata/);
 });
+
+
+test('baseline gestionale OPC 2026 con verifica 2027 visibile senza sovrascrivere le scadenze ufficiali',()=>{
+ const data=fixture();data.opcExerciseBaseline={year:2026,fromYear:2027,planningExpiry:'31/12/2027',formalValidityUnchanged:true,items:[
+  {personId:'OP1',code:'MI.OPC.OP - OPERATORE DI CANTIERE',planningStatus:'OK - baseline gestionale',evidenceStatus:'non verificata'},
+  {personId:'OP3',code:'MI.OPC.QP.OP/GUIDA MDO',planningStatus:'OK - baseline gestionale',evidenceStatus:'non verificata'}]};
+ data.peopleRecords[1].validities=[{code:'MI.OPC.OP - OPERATORE DI CANTIERE',roleExpiry:'2026-12-31',roleOutcome:'DA_VERIFICARE'}];
+ const chief=visibleState(data,user('chief','T2','CT1'));
+ assert.equal(chief.opcExerciseBaseline.items.length,2);
+ assert.equal(chief.opcExerciseBaseline.planningExpiry,'31/12/2027');
+ const operator=visibleState(data,user('preposto'));
+ assert.equal(operator.opcExerciseBaseline.items.length,1);
+ assert.equal(operator.opcExerciseBaseline.items[0].personId,'OP1');
+ assert.equal(operator.peopleRecords[0].validities,undefined);
+ assert.equal(data.peopleRecords[1].validities[0].roleExpiry,'2026-12-31');
+ assert.equal(data.peopleRecords[1].validities[0].roleOutcome,'DA_VERIFICARE');
+});
