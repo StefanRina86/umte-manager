@@ -327,7 +327,7 @@ export function applyPatch(data,patch,user){const next=structuredClone(data),per
     if(String(day.before||day.theoretical||'').toUpperCase()!=='RGLS')continue;
     const pid=sid(day.personId),date=String(day.date||'');
     const from=String(event.start||'08:30'),to=String(event.end||'17:06');
-    if(!/^\\d{2}:\\d{2}$/.test(from)||!/^\\d{2}:\\d{2}$/.test(to))throw Error('Orario corso RGLS non valido');
+    if(!/^\d{2}:\d{2}$/.test(from)||!/^\d{2}:\d{2}$/.test(to))throw Error('Orario corso RGLS non valido');
     const minutes=t=>Number(t.slice(0,2))*60+Number(t.slice(3,5));
     let gross=minutes(to)-minutes(from);if(gross<0)gross+=1440;
     if(!gross)throw Error('Durata corso RGLS non valida');
