@@ -7,6 +7,7 @@ const script=name=>path.join(root,name);
 async function page(html,state,role='owner',personId='OP1'){
  const browser=await chromium.launch({headless:true});
  const p=await browser.newPage({viewport:{width:390,height:860}});
+ p.setDefaultTimeout(6000);
  await p.setContent(html);
  await p.evaluate(({state,role,personId})=>{
   const people=state.peopleRecords||[];
