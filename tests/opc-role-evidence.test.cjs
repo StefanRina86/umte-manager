@@ -18,8 +18,8 @@ test('MI.OPC: il riepilogo richiede evidenze e non cambia autorizzazioni',async(
   await page.addScriptTag({path:script});
   const t=await page.locator('#umteOpcRoleEvidence').innerText();
   assert.match(t,/Operatore di cantiere, guida e scorta/);
-  assert.match(t,/Rapportini conclusi presenti nel gestionale: 0/);
-  assert.match(t,/Nessun rinnovo automatico/);
+  assert.match(t,/Rapportini conclusi presenti: 0/);
+  assert.match(t,/Nessuna attestazione di validità per presunzione/);
   assert.equal(await page.evaluate(()=>JSON.stringify(window.UMTELeave.people()[0])===window.__before),true);
  }finally{await browser.close();}
 });
