@@ -26,5 +26,19 @@
   if(t&&[...t.options].some(o=>o.value===preferredTeam)&&t.value!==preferredTeam){t.value=preferredTeam;t.dispatchEvent(new Event('change',{bubbles:true}));}
   if(a&&[...a.options].some(o=>o.value===me.nucleus)&&a.value!==me.nucleus){a.value=me.nucleus;a.dispatchEvent(new Event('change',{bubbles:true}));}
  }
- setTimeout(filter,250);
+ if(shared.user.role==='chief'){
+  const restrict=()=>{
+   for(const id of ['variationPerson','competencePerson']){
+    const select=document.getElementById(id);
+    if(!select)continue;
+    for(const option of select.options){
+     if(!option.value)continue;
+     const person=(shared.data.peopleRecords||[]).find(p=>String(p.id)===String(option.value));
+     option.disabled=Boolean(person&&person.nucleus!==me.nucleus);
+    }
+   }
+  };
+  restrict();setTimeout(restrict,350);
+ }
+  setTimeout(filter,250);
 })();
