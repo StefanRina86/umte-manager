@@ -110,7 +110,7 @@ export const permissions={owner:['requestsManage','variation','competenceCreate'
 const allowed={leaveRequests:'variation',leaveCampaigns:'approve',variations:'variation',competencies:'competenceCreate',trainingCompletions:'schedulePeopleEvents',courseCatalogOverrides:'schedulePeopleEvents',trainingEvents:'schedulePeopleEvents',medicalAppointments:'schedulePeopleEvents',activities:'activityEdit',activityDiary:'diaryEdit',activityPublications:'activityPublish',safetyRecords:'safetyManage',peopleRecords:'adminManage',manualLocations:'adminManage',shiftRules:'adminManage',theoreticalRules:'adminManage',rotationJumps:'adminManage',ruleConfig:'adminManage',presenceImportVersion:'adminManage',presenceImportHistory:'adminManage',auditLog:'adminManage',activityCatalog:'activityEdit',odlCatalog:'activityEdit',locationCatalog:'activityEdit'};
 export function visibleState(data,user){
  const d=structuredClone(data),role=user.role,scoped=teamScopedRoles.includes(role);
- if(!(permissions[role]||[]).includes('schedulePeopleEvents'))d.medicalAppointments=(d.medicalAppointments||[]).map(({id,personId,date,start,end})=>({id,personId,date,start,end}));
+ if(!(permissions[role]||[]).includes('schedulePeopleEvents'))d.medicalAppointments=(d.medicalAppointments||[]).map(({id,personId,date,start,end,visibilityFrom})=>({id,personId,date,start,end,visibilityFrom}));
  if(role!=='owner')delete d.maintenanceHistory;
  if(role!=='owner')d.operationalRequests=(d.operationalRequests||[]).filter(r=>r.createdByUserId===user.user_id);
  if(scoped){
