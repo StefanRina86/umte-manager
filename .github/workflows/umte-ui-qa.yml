@@ -3,6 +3,8 @@ on:
   push:
     branches: [main]
     paths:
+      - 'app.html'
+      - 'cloud-bootstrap.js'
       - 'mobile-shift-cards.js'
       - 'mobile-shift-cards.css'
       - 'mobile-polish.css'
