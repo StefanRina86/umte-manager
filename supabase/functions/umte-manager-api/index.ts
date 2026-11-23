@@ -250,7 +250,7 @@ export function applyPatch(data,patch,user){const next=structuredClone(data),per
     if(!patch.activityPublications?.[chiefPublicationKey(monday,person)])throw Error('Pubblicazione della squadra richiesta');
    }
   }
-  for(const old of visible.filter(a=>chiefOwn(a,person)))if(!ids.has(sid(old.id)){
+  for(const old of visible.filter(a=>chiefOwn(a,person)))if(!ids.has(sid(old.id))){
    if(old.sourceCourseEventId||(data.activityDiary||[]).some(r=>sid(r.activityId)===sid(old.id)))throw Error('Attività con corso o rapportino protetta');
   }
   next.activities=[...original.filter(a=>!visibleIds.has(sid(a.id))),...value.filter(a=>!byId.has(sid(a.id))||visibleIds.has(sid(a.id)))];continue;
