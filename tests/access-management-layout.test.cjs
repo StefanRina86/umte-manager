@@ -21,6 +21,7 @@ for(const width of [390,1440]){
     window.fetch=async(url,opts)=>{
       const data=JSON.parse(opts.body);
       window.calls.push(data);
+      if(data.action==='reset_password')return {ok:true,json:async()=>({ok:true,message:'Password reimpostata sul CID'})};
       if(data.action==='state')return {ok:true,json:async()=>({data:{peopleRecords:[{id:'CID-1',displayName:'Persona Test',active:true}]},user:{role:'owner'}})};
       if(data.action==='members'&&data.remove)return {ok:true,json:async()=>({ok:true,removed:true})};
       if(data.action==='members'&&data.update)return {ok:true,json:async()=>({ok:true})};
@@ -45,7 +46,15 @@ for(const width of [390,1440]){
    let updates=await page.evaluate(()=>window.calls.filter(x=>x.update));
    assert.equal(updates.length,1);
    assert.deepEqual(updates[0].update,{userId:'test',role:'preposto',personId:'CID-1',enabled:true});
-   page.on('dialog',dialog=>dialog.accept('ELIMINA'));
+   const reset=page.getByRole('button',{name:'Reimposta password al CID'});
+   assert.equal(await reset.count(),1,'Owner user must not have a reset button');
+   page.on('dialog',dialog=>dialog.accept(dialog.message().includes('Reimpostare')?'REIMPOSTA':'ELIMINA'));
+   await reset.click();
+   await page.getByText(/Password reimpostata sul CID/).waitFor();
+   const requests=await page.evaluate(()=>window.calls.filter(c=>c.action==='reset_password'));
+   assert.equal(requests.length,1);
+   assert.deepEqual(requests[0],{action:'reset_password',userId:'test',confirmed:true});
+
    await page.getByRole('button',{name:'Elimina account da UMTE Manager'}).click();
    await page.getByText('1 account registrati').waitFor();
    const removals=await page.evaluate(()=>window.calls.filter(x=>x.remove));
