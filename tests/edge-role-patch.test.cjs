@@ -155,22 +155,27 @@ test('Corso visibile a chi partecipa senza elenco di altri colleghi',()=>{
 });
 
 
-test('CT consulta altri nuclei ma può variare turni e competenze solo nel proprio nucleo',()=>{
+test('CT consulta turni e competenze di altri nuclei ma può modificare solo i propri',()=>{
  const data=fixture(),chief=user('chief','T2','CT1');
  data.peopleRecords.push({id:'OP4',displayName:'Altro operatore Arona',nucleus:'Arona',team:'3',active:true});
  data.variations=[{id:'V1',personId:'OP1',date:'2026-11-24',shift:'M'},{id:'V2',personId:'OP3',date:'2026-11-24',shift:'P'}];
  data.competencies=[{id:'K1',personId:'OP2',date:'2026-11-24',allowances:{line:true}},{id:'K2',personId:'OP3',date:'2026-11-24',allowances:{line:true}}];
  const view=visibleState(data,chief);
- assert.equal(view.activities.length,2,'CT sees all activities');
- assert.equal(view.peopleRecords.length,5,'CT can view all nuclei');
- assert.equal(view.variations.length,1,'CT only receives editable variations of own nucleus');
- assert.equal(view.competencies.length,1,'CT only receives own nucleus competence data');
- const v=applyPatch(data,{variations:[{...view.variations[0],shift:'N'},{id:'V3',personId:'OP4',date:'2026-11-25',shift:'M'}]},chief);
+ assert.equal(view.activities.length,2);
+ assert.equal(view.peopleRecords.length,5);
+ assert.equal(view.variations.length,2,'Turni di tutti i nuclei visibili');
+ assert.equal(view.competencies.length,2,'Competenze degli altri nuclei visibili, sola lettura');
+ const own=view.variations.find(v=>v.id==='V1'),other=view.variations.find(v=>v.id==='V2');
+ const v=applyPatch(data,{variations:[{...own,shift:'N'},other,{id:'V3',personId:'OP4',date:'2026-11-25',shift:'M'}]},chief);
+ assert.equal(v.variations.length,3,'Nessun duplicato da nucleo diverso');
  assert.equal(v.variations.find(r=>r.id==='V2').shift,'P');
  assert.equal(v.variations.find(r=>r.id==='V3').shift,'M');
- assert.throws(()=>applyPatch(data,{variations:[{...view.variations[0]},{id:'VX',personId:'OP3',date:'2026-11-25',shift:'M'}]},chief),/fuori dalla giurisdizione/);
+ assert.throws(()=>applyPatch(data,{variations:[own,{...other,shift:'M'}]},chief),/sola lettura/);
+ assert.throws(()=>applyPatch(data,{variations:[own]},chief),/Eliminazione di turno non consentita/);
+ assert.throws(()=>applyPatch(data,{variations:[own,other,{id:'VX',personId:'OP3',date:'2026-11-25',shift:'M'}]},chief),/sola lettura/);
  const c=applyPatch(data,{competencies:[...view.competencies,{id:'K3',personId:'OP4',date:'2026-11-25',status:'draft',allowances:{overtime:true}}]},chief);
  assert.equal(c.competencies.find(r=>r.id==='K2').personId,'OP3');
+ assert.throws(()=>applyPatch(data,{competencies:[{...view.competencies[0]},{...view.competencies[1],allowances:{line:false}}]},chief),/fuori dalla giurisdizione/);
  assert.throws(()=>applyPatch(data,{competencies:[...view.competencies,{id:'KX',personId:'OP3',date:'2026-11-25'}]},chief),/fuori dalla giurisdizione/);
 });
 test('Corso non iscrive lavoratore in congedo o malattia, ma ammette RGLS per computo straordinario',()=>{
