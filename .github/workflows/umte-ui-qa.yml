@@ -19,6 +19,12 @@ on:
       - 'segnalazioni.js'
       - 'essenziale-ui.js'
       - 'cloud-runtime.js'
+      - 'course-availability-ui.js'
+      - 'congedo-operativo-ui.js'
+      - 'rapportino-non-programmato-ui.js'
+      - 'mansioni-superiori-ui.js'
+      - 'rgls-overtime-ui.js'
+      - 'my-team-ui.js'
       - 'personal-event-reminder.js'
       - 'energy-maintenance-ui.js'
       - 'abilitazioni.js'
@@ -44,6 +50,12 @@ jobs:
           npm --version
           npx playwright --version
           npx playwright install --dry-run chromium
+      - name: Verify new workflows: courses, RGLS, leave, unplanned TE-D, superior duties
+        if: always()
+        shell: bash
+        run: |
+          set -o pipefail
+          node --test --test-reporter=spec tests/new-workflows.test.cjs 2>&1 | tee "${RUNNER_TEMP}/umte-new-workflows-test-log.txt"
       - name: Verify personal medical appointment notice and privacy
         if: always()
         shell: bash
