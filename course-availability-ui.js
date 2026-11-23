@@ -40,7 +40,7 @@
      input.disabled=true;
      label.style.opacity='.55';label.title='Non disponibile il '+conflict.date+': '+conflict.reason;
      if(!marker){const note=document.createElement('small');note.className='umte-course-unavailable';note.style.cssText='display:block;color:#a03335;font-weight:700';note.textContent='Non disponibile · '+conflict.reason+' ('+conflict.date+')';label.append(note);}
-     else marker.textContent='Non disponibile · '+conflict.reason+' ('+conflict.date+')';
+     else {const label='Non disponibile · '+conflict.reason+' ('+conflict.date+')';if(marker.textContent!==label)marker.textContent=label;}
     }else{
      input.disabled=false;label.style.opacity='';label.title='';
      marker?.remove();
