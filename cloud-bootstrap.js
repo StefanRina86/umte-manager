@@ -41,7 +41,26 @@ async function accessManager(payload){
    button.onclick=async()=>{if(enabled.checked&&(!person.value||role.value==='pending')){message.textContent='Per abilitare, associa un CID e seleziona un ruolo operativo.';return;}button.disabled=true;message.textContent='Salvataggio in corso…';try{const r=await api({action:'members',update:{userId:u.user_id,role:role.value,personId:person.value,enabled:enabled.checked}}),v=await r.json();if(!r.ok)throw Error(v.error||'Errore aggiornamento');u.role=role.value;u.person_id=person.value;u.enabled=enabled.checked;message.textContent='Profilo aggiornato correttamente';counter.textContent=members.length+' account registrati · '+members.filter(u=>u.enabled).length+' abilitati · '+members.filter(u=>!u.enabled).length+' non abilitati';}catch(e){message.textContent=e.message||'Salvataggio non riuscito';}finally{button.disabled=false;}};
    const remove=document.createElement('button');remove.type='button';remove.textContent='Elimina account da UMTE Manager';remove.style.cssText='margin-top:10px;background:#fff1f1;border:1px solid #bd5360;color:#962c39';
    remove.onclick=async()=>{const email=String(u.email||u.name||'').trim();if(!email){message.textContent='Account privo di email: rimozione non disponibile.';return;}const answer=prompt('Eliminare l’accesso di '+email+' da UMTE Manager? Le credenziali Supabase e gli altri applicativi resteranno invariati. Per confermare, scrivi ELIMINA.');if(answer!=='ELIMINA')return;remove.disabled=true;button.disabled=true;message.textContent='Rimozione in corso…';try{const r=await api({action:'members',remove:{userId:u.user_id}}),v=await r.json();if(!r.ok)throw Error(v.error||'Rimozione non riuscita');const index=members.findIndex(x=>x.user_id===u.user_id);if(index>=0)members.splice(index,1);render();}catch(e){message.textContent=e.message||'Rimozione non riuscita';remove.disabled=false;button.disabled=false;}};
-   row.append(roleLabel,personLabel,label,button,remove,message);list.append(row);
+   const reset=document.createElement('button');reset.type='button';reset.textContent='Reimposta password al CID';reset.style.cssText='margin-top:10px;margin-right:10px;background:#e9f2f8;border:1px solid #7caabf;color:#16435b';
+   reset.disabled=!u.enabled||!u.person_id;
+   reset.title=!u.person_id?'Associa prima un CID e salva il profilo':'Imposta come password il CID associato, senza inviare email';
+   reset.onclick=async()=>{
+    const email=String(u.email||'').trim();
+    if(!email||!u.person_id){message.textContent='Associa prima un CID valido a questo account.';return;}
+    const answer=prompt('Reimpostare la password di '+email+' al CID associato? Non verranno inviate email. La password precedente non funzionerà più. Per confermare, scrivi REIMPOSTA.');
+    if(answer!=='REIMPOSTA')return;
+    reset.disabled=true;message.textContent='Reimpostazione password in corso…';
+    try{
+     const {data,error}=await cloud.auth.getSession();
+     if(error||!data.session)throw Error('Sessione scaduta: effettua nuovamente l’accesso.');
+     const response=await nativeFetch(config.url+'/functions/v1/umte-manager-provision',{method:'POST',cache:'no-store',headers:{'Content-Type':'application/json',apikey:config.key,Authorization:'Bearer '+data.session.access_token},body:JSON.stringify({action:'reset_password',userId:u.user_id,confirmed:true})});
+     const body=await response.json();
+     if(!response.ok)throw Error(body.error||'Reimpostazione non riuscita');
+     message.textContent='Password reimpostata sul CID. Nessuna email inviata. Comunica il CID soltanto al collega.';
+    }catch(e){message.textContent=e.message||'Password non modificata.';}
+    finally{reset.disabled=!u.enabled||!u.person_id;}
+   };
+   row.append(roleLabel,personLabel,label,button,reset,remove,message);list.append(row);
   }
  }
  search.addEventListener('input',render);filter.addEventListener('change',render);render();
