@@ -95,8 +95,8 @@ test('capo tecnico non può creare o spostare attività fuori squadra',()=>{
  const data=fixture(),u=user('chief','T2','CT1'),own=data.activities[0],other=data.activities[1];
  assert.throws(()=>applyPatch(data,{activities:[own,{...other,id:'A3'}]},u),/fuori dal proprio nucleo/);
  assert.throws(()=>applyPatch(data,{activities:[{...own,nucleus:'Gallarate'}]},u),/fuori dal proprio nucleo/);
- assert.throws(()=>applyPatch(data,{activities:[{...own,people:['OP1','OP3']}]},u),/Assegnazione fuori nucleo/);
- assert.throws(()=>applyPatch(data,{activities:[{...own,roleAssignments:{preposto:'OP3'}}]},u),/Incarico fuori nucleo/);
+ assert.throws(()=>applyPatch(data,{activities:[{...own,people:['OP1','OP3']}]},u),/Supporto concordato/);
+ assert.throws(()=>applyPatch(data,{activities:[{...own,roleAssignments:{preposto:'OP3'}}]},u),/Supporto concordato/);
  assert.throws(()=>applyPatch(data,{activities:[{...other,title:'Alterata'}]},u),/sola lettura/);
 });
 test('capo tecnico pubblica solo la propria settimana e conserva le pubblicazioni generali',()=>{
