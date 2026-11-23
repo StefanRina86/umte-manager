@@ -145,7 +145,7 @@ async function open(){
  // Insert at the actual document closing tag, never inside a JavaScript template containing </body>.
  const closingBody=html.toLowerCase().lastIndexOf('</body>');
  if(closingBody<0)throw Error('Chiusura HTML applicazione mancante');
- html=html.slice(0,closingBody)+'<script src="guida-rapida.js?v=privacy-20261117" defer></script><script src="ted-document-archive.js?v=20261116" defer></script><script src="operational-ui-fixes.js?v=20261117" defer></script>'+html.slice(closingBody);
+ html=html.slice(0,closingBody)+'<script src="personal-event-reminder.js?v=20261123" defer></script><script src="guida-rapida.js?v=privacy-20261117" defer></script><script src="ted-document-archive.js?v=20261116" defer></script><script src="operational-ui-fixes.js?v=20261117" defer></script>'+html.slice(closingBody);
  const oldUser="permissions:window.UMTE_SHARED.user.permissions}:profiles[profileKey]||profiles.viewer";
  if(!html.includes(oldUser))throw Error('Compatibilità login: identità personale non trovata');
  html=html.replace(oldUser,"permissions:window.UMTE_SHARED.user.permissions,personId:window.UMTE_SHARED.user.personId}:profiles[profileKey]||profiles.viewer");
