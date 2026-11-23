@@ -79,7 +79,7 @@ async function open(){
  if(new URLSearchParams(location.search).has('accessi'))return accessManager(payload);
  window.UMTE_SHARED=payload;window.UMTE_BASELINE=payload.baseline;delete payload.baseline;
  const response=await nativeFetch('app.html',{cache:'no-store'});if(!response.ok)throw Error('Applicazione non disponibile.');
- let html=(await response.text()).replace('<head>','<head><script src="cloud-save-conflict.js?v=record-merge-20261108-r3"></script><script src="cloud-runtime.js?v=record-merge-20261108-r4"></script><link rel="stylesheet" href="mobile-improvements.css?v=20261108">');
+ let html=(await response.text()).replace('<head>','<head><script src="cloud-save-conflict.js?v=competencies-merge-20261123"></script><script src="cloud-runtime.js?v=record-merge-20261108-r4"></script><link rel="stylesheet" href="mobile-improvements.css?v=20261108">');
  if(payload.capabilities?.energyMaintenance){
    const replace=(before,after)=>{if(!html.includes(before))throw Error('Versione applicativo incompatibile con gli aggiornamenti: '+before.slice(0,45));html=html.replace(before,after);};
    replace('<script src="formazione-regole.js"></script>','<script src="formazione-regole-energia.js"></script>');
@@ -151,7 +151,7 @@ async function open(){
  // Insert at the actual document closing tag, never inside a JavaScript template containing </body>.
  const closingBody=html.toLowerCase().lastIndexOf('</body>');
  if(closingBody<0)throw Error('Chiusura HTML applicazione mancante');
- html=html.slice(0,closingBody)+'<script src="rgls-overtime-ui.js?v=20261123b" defer></script><script src="course-availability-ui.js?v=20261123a" defer></script><script src="rapportino-non-programmato-ui.js?v=20261123a" defer></script><script src="mansioni-superiori-ui.js?v=20261123a" defer></script><script src="personal-event-reminder.js?v=20261123" defer></script><script src="guida-rapida.js?v=privacy-20261117" defer></script><script src="ted-document-archive.js?v=20261116" defer></script><script src="operational-ui-fixes.js?v=20261117" defer></script>'+html.slice(closingBody);
+ html=html.slice(0,closingBody)+'<script src="competence-layout-fixes.js?v=20261123" defer></script><script src="rgls-overtime-ui.js?v=20261123b" defer></script><script src="course-availability-ui.js?v=20261123a" defer></script><script src="rapportino-non-programmato-ui.js?v=20261123a" defer></script><script src="mansioni-superiori-ui.js?v=20261123a" defer></script><script src="personal-event-reminder.js?v=20261123" defer></script><script src="guida-rapida.js?v=privacy-20261117" defer></script><script src="ted-document-archive.js?v=20261116" defer></script><script src="operational-ui-fixes.js?v=20261117" defer></script>'+html.slice(closingBody);
  const oldUser="permissions:window.UMTE_SHARED.user.permissions}:profiles[profileKey]||profiles.viewer";
  if(!html.includes(oldUser))throw Error('Compatibilità login: identità personale non trovata');
  html=html.replace(oldUser,"permissions:window.UMTE_SHARED.user.permissions,personId:window.UMTE_SHARED.user.personId}:profiles[profileKey]||profiles.viewer");
