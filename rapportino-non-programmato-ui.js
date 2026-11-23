@@ -31,7 +31,7 @@ form.append(title,help,item('Data intervento',date),item('Nucleo',nucleus),item(
 dialog.append(form);heading.append(trigger);document.body.append(dialog);
 function refresh(){
  const current=new Set([...people.selectedOptions].map(x=>x.value));people.replaceChildren();
- for(const p of staff.filter(p=>p.nucleus===nucleus.value)){
+ for(const p of staff.filter(p=>p.nucleus===nucleus.value&&(role!=='preposto'||String(p.team||'')===String(me?.team||'')))){
   const o=new Option(p.displayName+' · Squadra '+(p.team||'staff'),p.id);o.selected=current.has(String(p.id))||!current.size&&String(p.id)===String(me?.id);people.add(o);
  }
  if(!people.selectedOptions.length&&people.options.length)people.options[0].selected=true;
