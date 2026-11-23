@@ -63,6 +63,22 @@ for(const width of [390,1440]){
    assert.equal(data.stored.peopleRecords[0].validities[1].maintenanceExpiry,'2027-12-31');
    assert.equal(data.stored.peopleRecords[0].validities[2].roleExpiry,'2026-12-31','Safety role must stay unchanged');
    assert.equal(data.stored.energyMaintenanceHistory.length,1);
+   // Una seconda registrazione nella medesima sessione deve usare la revisione aggiornata.
+   await form.locator('input[type="date"]').first().fill('2026-11-10');
+   await form.locator('input[type="checkbox"]').nth(1).check();
+   await form.getByRole('button',{name:'Registra mantenimento'}).click();
+   await page.waitForFunction(()=>window.UMTE_SHARED.revision===3);
+   const again=await page.evaluate(()=>({
+    revision:window.UMTE_SHARED.revision,
+    calls:window.__calls.map(x=>x.revision),
+    saved:JSON.parse(localStorage.getItem('umte-manager-v01')),
+    href:location.href
+   }));
+   assert.equal(again.revision,3);
+   assert.deepEqual(again.calls,[1,2]);
+   assert.equal(again.saved.energyMaintenanceHistory.length,2);
+   assert.equal(again.saved.peopleRecords[1].validities[0].roleExpiry,'2027-12-31');
+   assert.equal(again.href,'https://synthetic.invalid/');
    assert.deepEqual(errors,[]);
   }finally{await browser.close();}
  });
