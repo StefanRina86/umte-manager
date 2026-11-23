@@ -8,8 +8,8 @@ if(!api||!['owner','specialist','administrative','chief'].includes(shared?.user?
 const state=api.state,people=(api.people()||[]).filter(p=>p.active!==false);
 const me=people.find(p=>String(p.id)===String(shared.user.personId));
 const scope=shared.user.role==='chief'?people.filter(p=>p.nucleus===me?.nucleus):people;
-const heading=document.querySelector('#shifts .page-heading')||document.querySelector('#people .page-heading');
-if(!heading)return;
+const toolbar=document.querySelector('#shifts .toolbar')||document.querySelector('#shifts .heading-actions')||document.querySelector('#shifts .page-heading');
+if(!toolbar)return;
 const btn=document.createElement('button');btn.type='button';btn.className='button secondary';btn.textContent='Registra congedo (C)';
 const dialog=document.createElement('dialog');dialog.id='umteDirectLeaveDialog';dialog.style.cssText='border:1px solid #cbdce3;border-radius:14px;padding:22px;max-width:min(560px,92vw);width:100%;box-shadow:0 12px 40px #0003';
 const label=(text,field)=>{const l=document.createElement('label');l.style.cssText='display:grid;gap:5px;margin:12px 0;font-weight:650';l.append(text,field);return l;};
@@ -24,7 +24,10 @@ const note=document.createElement('p');note.setAttribute('role','status');note.s
 const save=document.createElement('button');save.type='submit';save.className='button primary';save.textContent='Registra C';
 const close=document.createElement('button');close.type='button';close.className='button secondary';close.textContent='Annulla';close.onclick=()=>dialog.close();
 const form=document.createElement('form');form.method='dialog';form.append(title,sub,label('Dipendente',person),label('Data',date),label('Riferimento',reason),note,save,close);dialog.append(form);
-heading.append(btn);document.body.append(dialog);
+btn.style.cssText='position:static;align-self:center;margin:6px';
+const variationButton=[...toolbar.querySelectorAll('button')].find(b=>/variazione/i.test(b.textContent||''));
+if(variationButton)variationButton.insertAdjacentElement('afterend',btn);else toolbar.append(btn);
+document.body.append(dialog);
 btn.onclick=()=>{date.value=new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Rome'}).format(new Date());note.textContent='';dialog.showModal();};
 form.addEventListener('submit',e=>{
  e.preventDefault();
