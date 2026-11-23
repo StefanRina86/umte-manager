@@ -55,6 +55,38 @@ test('RGLS 08:00-16:36 contabilizza 7h36 dopo pausa e non altera turno',async()=
   assert.match(await p.locator('#overtimeReason').inputValue(),/7h36/);
  }finally{await browser.close();}
 });
+test('RGLS notturno 22:00-05:36 senza pausa pranzo',async()=>{
+ const {browser,p}=await page('<div></div>',{peopleRecords:people,variations:[],activities:[]});
+ try{
+  await p.addScriptTag({path:script('rgls-overtime-ui.js')});
+  const c=await p.evaluate(()=>window.UMTERGLSOvertime.calculate('22:00','05:36'));
+  assert.equal(c.grossMinutes,456);
+  assert.equal(c.breakMinutes,0);
+  assert.equal(c.netMinutes,456);
+ }finally{await browser.close();}
+});
+test('Cambio turno da RGLS a presenza M registra straordinario completo senza doppio inserimento',async()=>{
+ const html='<form id="variationForm"><select id="variationPerson"><option value="OP1">Uno</option></select><input id="variationDate" value="2026-11-27"><select id="variationShift"><option value="M">M</option></select><input id="variationActualStart" value="08:00"><input id="variationActualEnd" value="16:36"></form>';
+ const {browser,p}=await page(html,{peopleRecords:people,variations:[],competencies:[],trainingEvents:[]});
+ try{
+  await p.evaluate(()=>{
+   document.getElementById('variationForm').addEventListener('submit',e=>{
+    e.preventDefault();
+    window.UMTELeave.state.variations=[{personId:'OP1',date:'2026-11-27',shift:'M',actualStart:'08:00',actualEnd:'16:36'}];
+    window.UMTELeave.persist();
+   });
+  });
+  await p.addScriptTag({path:script('rgls-overtime-ui.js')});
+  await p.locator('#variationForm').evaluate(e=>e.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true})));
+  await p.waitForFunction(()=>window.UMTELeave.state.competencies?.length===1);
+  const d=await p.evaluate(()=>({competencies:window.UMTELeave.state.competencies,saveCount:window.__count}));
+  assert.equal(d.competencies[0].allowances.overtime,true);
+  assert.equal(d.competencies[0].overtimeNetMinutes,456);
+  assert.equal(d.competencies[0].overtimeBreakMinutes,60);
+  assert.match(d.competencies[0].overtimeReason,/7h36/);
+  assert.equal(d.saveCount,2);
+ }finally{await browser.close();}
+});
 test('Amministrativo registra congedo C autorizzato nella giornata scelta',async()=>{
  const html='<section id="shifts"><div class="page-heading">Turni e presenze</div></section>';
  const {browser,p}=await page(html,{peopleRecords:people,variations:[],medicalAppointments:[],trainingEvents:[]},'administrative','OP1');
