@@ -103,8 +103,8 @@ test('Mansione superiore mantiene la voce nelle competenze e il sostituto',async
   await form.locator('select').nth(0).selectOption('OP1');
   await form.locator('select').nth(1).selectOption('OP2');
   await form.locator('input[type=date]').fill('2026-11-27');
-  await form.locator('input[type=text]').nth(0).fill('Capo Tecnico');
-  await form.locator('input[type=text]').nth(1).fill('Capo Tecnico');
+  await form.locator('input').nth(1).fill('Capo Tecnico');
+  await form.locator('input').nth(2).fill('Capo Tecnico');
   await form.locator('select').nth(2).selectOption('FERIE');
   await form.getByRole('button',{name:'Registra giornata'}).click();
   const d=await p.evaluate(()=>({records:window.UMTELeave.state.competencies,saves:window.__count}));
