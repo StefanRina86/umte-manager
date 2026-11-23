@@ -114,6 +114,34 @@ async function open(){
  html=html.replace('<script src="essenziale-ui.js"></script>', '<link rel="stylesheet" href="mobile-polish.css?v=20261108c"><script src="mobile-navigation.js?v=hamburger-20261117"></script><script src="essenziale-ui.js"></script>');
  html=html.replace('</head>','<link rel="stylesheet" href="interfaccia-2026.css?v=20261110"><link rel="stylesheet" href="guida-rapida.css?v=20261110"></head>');
  html=html.replace('<script src="essenziale-ui.js"></script>','<script src="essenziale-ui.js?v=privacy-20261117"></script>');
+ // The embedded app still contains a legacy prototype profile selector. It must never
+ // become an alternative to the authenticated Supabase session when startup fails.
+ const legacyLoginStart="  el('loginButton').addEventListener('click',()=>{";
+ const legacyLoginEnd="  function effectiveRecord(base)";
+ const legacyStartAt=html.indexOf(legacyLoginStart),legacyEndAt=html.indexOf(legacyLoginEnd,legacyStartAt);
+ if(legacyStartAt<0||legacyEndAt<0)throw Error('Protezione accessi non installata: schermata di avvio obsoleta.');
+ html=html.slice(0,legacyStartAt)+
+  "  el('loginButton').addEventListener('click',()=>{location.replace('./?login=1');});\\n"+
+  html.slice(legacyEndAt);
+ const legacyBootStart="  try{setupOptions();updateCompetenceSelection();const savedProfile=";
+ const legacyBootEnd="\\n})();\\n\\n</script>";
+ const bootStartAt=html.indexOf(legacyBootStart),bootEndAt=html.indexOf(legacyBootEnd,bootStartAt);
+ if(bootStartAt<0||bootEndAt<0)throw Error('Protezione avvio non installata: versione dell’app non supportata.');
+ const protectedBoot=[
+  "  try{setupOptions();updateCompetenceSelection();login('personal');}",
+  "  catch(error){",
+  "   console.error('Errore di inizializzazione UMTE Manager',error);",
+  "   el('loginScreen').hidden=true;",
+  "   document.body.classList.remove('umte-authenticated');",
+  "   const shield=document.createElement('section');shield.id='umteStartupFailure';shield.setAttribute('role','alert');",
+  "   shield.style.cssText='position:fixed;inset:0;z-index:2147483647;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px;background:#f5f9fb;color:#102f41;text-align:center;font:16px system-ui';",
+  "   const title=document.createElement('h1');title.textContent='Caricamento del gestionale non riuscito';",
+  "   const detail=document.createElement('p');detail.textContent='La sessione Supabase resta associata al tuo account. Non è stato attivato alcun profilo sostitutivo. Dettaglio: '+(error?.message||'Errore sconosciuto');",
+  "   const retry=document.createElement('button');retry.type='button';retry.textContent='Riprova il caricamento';retry.style.cssText='padding:12px 18px;border-radius:8px;cursor:pointer';retry.onclick=()=>location.reload();",
+  "   shield.append(title,detail,retry);document.body.append(shield);",
+  "  }"
+ ].join('\\n');
+ html=html.slice(0,bootStartAt)+protectedBoot+html.slice(bootEndAt);
  // Insert at the actual document closing tag, never inside a JavaScript template containing </body>.
  const closingBody=html.toLowerCase().lastIndexOf('</body>');
  if(closingBody<0)throw Error('Chiusura HTML applicazione mancante');
