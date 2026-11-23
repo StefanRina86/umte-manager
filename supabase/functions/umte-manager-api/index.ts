@@ -240,11 +240,7 @@ export function applyPatch(data,patch,user){const next=structuredClone(data),per
    if(!memberIds.has(sid(row.personId))||old&&sid(old.personId)!==sid(row.personId))throw Error('Modifica fuori dalla giurisdizione del proprio nucleo');
    if(!/^\d{4}-\d{2}-\d{2}$/.test(String(row.date||'')))throw Error('Data non valida');
    if(key==='variations'&&!String(row.shift||row.code||'').trim())throw Error('Turno non valido');
-   if(key==='competencies'){
-    for(const field of ['approvedAt','approvedBy','rejectedAt','rejectedBy'])
-     if(!same(row[field],old?.[field]))throw Error('Convalida competenza riservata al responsabile');
-    if(row.status==='approved'&&old?.status!=='approved')throw Error('Convalida competenza riservata al responsabile');
-   }
+   if(key==='competencies'&&row.status==='rejected'&&old?.status!=='rejected')throw Error('Rifiuto competenza riservato al responsabile');
   });
   continue;
  }
@@ -259,8 +255,9 @@ export function applyPatch(data,patch,user){const next=structuredClone(data),per
    if(old&&same(activity,old))continue;
    if(old&&!chiefOwn(old,person)||!chiefOwn(activity,person))throw Error('Attività fuori dal proprio nucleo');
    if(old?.sourceCourseEventId)throw Error('Attività corso gestita dalla pagina corsi');
-   if((activity.people||[]).some(pid=>!teamMembers(data,user).has(sid(pid))&&!(old?.people||[]).map(sid).includes(sid(pid))))throw Error('Assegnazione fuori nucleo non autorizzata');
-   if(Object.values(activity.roleAssignments||{}).some(pid=>pid&&!teamMembers(data,user).has(sid(pid))&&!Object.values(old?.roleAssignments||{}).map(sid).includes(sid(pid))))throw Error('Incarico fuori nucleo non autorizzato');
+   const otherNucleus=(activity.people||[]).filter(pid=>!teamMembers(data,user).has(sid(pid))&&!(old?.people||[]).map(sid).includes(sid(pid)));
+   const externalRoles=Object.values(activity.roleAssignments||{}).filter(pid=>pid&&!teamMembers(data,user).has(sid(pid))&&!Object.values(old?.roleAssignments||{}).map(sid).includes(sid(pid)));
+   if((otherNucleus.length||externalRoles.length)&&!/supporto\s+concordato\s+con/i.test(String(activity.notes||'')))throw Error('Per utilizzare personale di altri nuclei annota nelle Note operative: Supporto concordato con [referente]');
    if(activity.status==='published'&&old?.status!=='published'){
     const day=new Date(String(activity.date||'')+'T12:00:00Z');
     if(Number.isNaN(+day))throw Error('Data attività non valida');
@@ -316,10 +313,20 @@ export function applyPatch(data,patch,user){const next=structuredClone(data),per
   });continue;}
  throw Error('Registrazione riservata ai profili di gestione');
  }
- if(key==='competencies'&&!perms.includes('approve')){for(const r of value||[]){const old=(data.competencies||[]).find(o=>String(o.id)===String(r.id));for(const f of ['approvedAt','approvedBy'])if(!same(r[f],old?.[f]))throw Error('Approvazione riservata al responsabile');if(r.status==='approved'&&old?.status!=='approved')throw Error('Approvazione riservata al responsabile');}}
+ if(key==='competencies'&&!perms.includes('approve')&&!['specialist','administrative'].includes(user.role))throw Error('Certificazione competenze non autorizzata');
 
  if(key==='activities'){const ids=new Set((value||[]).map(r=>String(r.id)));const removed=new Set((data.activities||[]).filter(a=>!ids.has(String(a.id))).map(a=>String(a.id)));if((data.activityDiary||[]).some(r=>removed.has(String(r.activityId))))throw Error('Attività con rapportino protetta');}
  next[key]=value;
+ }
+ if(patch.competencies&&['owner','specialist','administrative','chief'].includes(user.role)){
+  const original=new Map((data.competencies||[]).map(row=>[sid(row.id),row]));
+  const now=new Date().toISOString(),who=user.name||user.email||user.user_id;
+  for(const row of next.competencies||[]){
+   if(same(row,original.get(sid(row.id))))continue;
+   if(!row.id||!row.personId||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(String(row.date||'')))throw Error('Competenza priva dei dati identificativi');
+   row.status='approved';row.approvedAt=now;row.approvedBy=who;row.certifiedByRole=user.role;
+   delete row.rejectedAt;delete row.rejectedBy;
+  }
  }
  if(patch.trainingEvents){
   // MF o altro corso su RGLS: l'intera prestazione netta è straordinario.
