@@ -12,5 +12,5 @@
   const diaries=Array.isArray(window.UMTE_SHARED?.data?.activityDiary)?window.UMTE_SHARED.data.activityDiary:[];
   const documented=diaries.filter(r=>r.completed===true||r.status==='completed'||r.status==='submitted'||r.submittedAt||r.receivedAt).length;
   operational.textContent='Operatore di cantiere, guida e scorta mezzi d’opera (MI.OPC): il mantenimento tramite esercizio richiede riscontri delle attività effettivamente svolte e verifica degli altri requisiti. Rapportini conclusi presenti nel gestionale: '+documented+'. Nessun rinnovo automatico, scadenza rimossa o attestazione di validità per presunzione.';
-  note.after(operational);
+  detail.after(operational);
 })();
