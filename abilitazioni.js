@@ -17,7 +17,7 @@
     const entries=Array.isArray(baseline?.items)?baseline.items.filter(x=>String(x.personId)===personId):[];
     const reports2027=diaries.filter(r=>String(r.date||'').startsWith('2027-')&&Array.isArray(r.actualPeopleIds)&&r.actualPeopleIds.some(id=>String(id)===personId)&&Boolean(r.receivedAt||r.submittedAt||['completed','submitted','approved'].includes(String(r.status||''))));
     operational.textContent=entries.length
-      ?'Esercizio ruoli MI.OPC · 2026: OK gestionale dichiarato ('+entries.length+' voci). Non è una convalida delle abilitazioni né elimina le scadenze ufficiali. 2027: '+reports2027.length+' rapportini conclusi con presenza documentata, da verificare per il ruolo specifico e gli altri requisiti. Nessuna abilitazione convalidata automaticamente.'
+      ?'Esercizio ruoli MI.OPC · 2026: OK gestionale dichiarato ('+entries.length+' voci). Pianificazione verifica 2027: '+String(baseline.planningExpiry||'31/12/2027')+'. Rapportini conclusi con presenza documentata nel 2027: '+reports2027.length+'. Verificare l’effettivo ruolo svolto e gli altri requisiti; le scadenze ufficiali restano invariate.'
       :'Operatore di cantiere, guida e scorta mezzi d’opera (MI.OPC): verifica su attività svolte e documenti. Rapportini conclusi presenti: '+documented+'. Nessuna attestazione di validità per presunzione.';
   }
   paintOperational();
