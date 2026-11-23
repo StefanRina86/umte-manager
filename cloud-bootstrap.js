@@ -121,7 +121,7 @@ async function open(){
  const legacyStartAt=html.indexOf(legacyLoginStart),legacyEndAt=html.indexOf(legacyLoginEnd,legacyStartAt);
  if(legacyStartAt<0||legacyEndAt<0)throw Error('Protezione accessi non installata: schermata di avvio obsoleta.');
  html=html.slice(0,legacyStartAt)+
-  "  el('loginButton').addEventListener('click',()=>{location.replace('./?login=1');});\\n"+
+  "  el('loginButton').addEventListener('click',()=>{location.replace('./?login=1');});\n"+
   html.slice(legacyEndAt);
  const legacyBootStart="  try{setupOptions();updateCompetenceSelection();const savedProfile=";
  const legacyBootEnd="\n})();\n\n</script>";
