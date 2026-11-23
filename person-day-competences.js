@@ -35,7 +35,7 @@ function line(tag,value,cls){const n=document.createElement(tag);n.textContent=S
 function render(){
  const modal=host();if(!modal||!selected)return;
  const {personId,date}=selected;
- if(!personId||!/^\\d{4}-\\d{2}-\\d{2}$/.test(date))return;
+ if(!personId||!/^\d{4}-\d{2}-\d{2}$/.test(date))return;
  const summary=modal.querySelector('.umte-person-allowances')||document.createElement('section');
  summary.className='umte-person-allowances';
  const rows=data().filter(r=>String(r.personId)===String(personId)&&r.date===date);
