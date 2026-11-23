@@ -216,7 +216,22 @@ export function applyPatch(data,patch,user){const next=structuredClone(data),per
  }
  if(key==='peopleRecords'&&!perms.includes('adminManage')&&perms.includes('schedulePeopleEvents')){next[key]=mergeRows(data[key]||[],data[key]||[],value,(r,old)=>{if(!old)throw Error('Nuovo personale non autorizzato');const a={...r},b={...old};for(const f of ['phone','email','contactsSeedVersion','contactsEditedAt','updatedAt','updatedBy']){delete a[f];delete b[f];}if(!same(a,b))throw Error('Solo contatti modificabili');});continue;}
  if(!allowed[key]||!perms.includes(allowed[key])&&!(key==='activities'&&user.role==='preposto'))throw Error('Operazione non autorizzata: '+key);
- if(user.role==='chief'&&(key==='variations'||key==='competencies')){
+ if(user.role==='chief'&&key==='variations'){
+  const ids=teamMembers(data,user),original=data.variations||[];
+  if(!Array.isArray(value))throw Error('Elenco turni non valido');
+  const byKey=v=>sid(v.personId)+'|'+String(v.date||''),submitted=new Map();
+  for(const row of value){
+   const k=byKey(row),previous=original.find(v=>byKey(v)===k);
+   if(submitted.has(k)||!ids.has(sid(row.personId))||!/^\d{4}-\d{2}-\d{2}$/.test(String(row.date||''))||!String(row.shift||'').trim())throw Error('Turno non valido o fuori dalla giurisdizione del proprio nucleo');
+   if(previous?.sourceEventId||previous?.sourceLeaveId){
+    if(!same(previous,row))throw Error('Turno collegato a corso, visita o congedo: intervenire dalla sezione dedicata');
+   }
+   submitted.set(k,row);
+  }
+  for(const old of original.filter(v=>ids.has(sid(v.personId))))if(!submitted.has(byKey(old))&&(old.sourceEventId||old.sourceLeaveId))throw Error('Turno collegato a evento non eliminabile');
+  next.variations=[...original.filter(v=>!ids.has(sid(v.personId))),...value];continue;
+ }
+ if(user.role==='chief'&&key==='competencies'){
   const memberIds=teamMembers(data,user),original=data[key]||[],visible=visibleState(data,user)[key]||[];
   next[key]=mergeRows(original,visible,value,(row,old)=>{
    if(!memberIds.has(sid(row.personId))||old&&sid(old.personId)!==sid(row.personId))throw Error('Modifica fuori dalla giurisdizione del proprio nucleo');
