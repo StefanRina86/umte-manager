@@ -36,7 +36,7 @@ for(const kind of ['rp','overtime']){
 test('Modelli generati: i dati reali di una chiamata RP e dello straordinario riempiono il file XLSX',async()=>{
  const fs=require('node:fs'),app=fs.readFileSync(path.join(root,'app.html'),'utf8');
  const take=(from,to)=>{const a=app.indexOf(from),b=app.indexOf(to,a);assert.ok(a>0&&b>a,from);return app.slice(a,b);};
- const helpers=take('function excelDateSerial(','function downloadGeneratedFile(')+
+ const helpers="function parseDate(s){return new Date(s+'T12:00:00');}\n"+take('function excelDateSerial(','function downloadGeneratedFile(')+
   take('function setXlsxCell(','function accountingShift(')+
   take('function updateAccountingWorkbookIdentity(','async function exportAccountingTemplate(');
  const browser=await chromium.launch({headless:true});
