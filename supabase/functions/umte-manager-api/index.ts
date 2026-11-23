@@ -233,11 +233,11 @@ export function applyPatch(data,patch,user){const next=structuredClone(data),per
  if(user.role==='chief'&&key==='activities'){
   const person=chiefHome(data,user),original=data.activities||[],visible=visibleState(data,user).activities||[];
   if(!Array.isArray(value))throw Error('Elenco attività non valido');
-  const ids=new Set(),visibleIds=new Set(visible.map(a=>sid(a.id))),byId=new Map(original.map(a=>[sid(a.id),a]));
+  const ids=new Set(),visibleIds=new Set(visible.filter(a=>chiefOwn(a,person)).map(a=>sid(a.id))),byId=new Map(original.map(a=>[sid(a.id),a]));
   for(const activity of value){
    const id=sid(activity?.id),old=byId.get(id);
    if(!id||ids.has(id))throw Error('Identificativo attività non valido');ids.add(id);
-   if(old&&!visibleIds.has(id))throw Error('Attività non autorizzata');
+   if(old&&!visibleIds.has(id)){if(!same(activity,old))throw Error('Attività di altro nucleo in sola lettura');continue;}
    if(old&&same(activity,old))continue;
    if(old&&!chiefOwn(old,person)||!chiefOwn(activity,person))throw Error('Attività fuori dal proprio nucleo');
    if(old?.sourceCourseEventId)throw Error('Attività corso gestita dalla pagina corsi');
@@ -250,11 +250,10 @@ export function applyPatch(data,patch,user){const next=structuredClone(data),per
     if(!patch.activityPublications?.[chiefPublicationKey(monday,person)])throw Error('Pubblicazione della squadra richiesta');
    }
   }
-  for(const old of visible)if(!ids.has(sid(old.id))){
-   if(!chiefOwn(old,person))throw Error('Attività di altra squadra non eliminabile');
+  for(const old of visible.filter(a=>chiefOwn(a,person)))if(!ids.has(sid(old.id)){
    if(old.sourceCourseEventId||(data.activityDiary||[]).some(r=>sid(r.activityId)===sid(old.id)))throw Error('Attività con corso o rapportino protetta');
   }
-  next.activities=[...original.filter(a=>!visibleIds.has(sid(a.id))),...value];continue;
+  next.activities=[...original.filter(a=>!visibleIds.has(sid(a.id))),...value.filter(a=>!byId.has(sid(a.id))||visibleIds.has(sid(a.id)))];continue;
  }
  if(user.role==='chief'&&key==='activityPublications'){
   const person=chiefHome(data,user),original=data.activityPublications||{},visible=visibleState(data,user).activityPublications||{};
