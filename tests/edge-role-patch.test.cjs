@@ -239,3 +239,26 @@ test('baseline gestionale OPC 2026 con verifica 2027 visibile senza sovrascriver
  assert.equal(data.peopleRecords[1].validities[0].roleExpiry,'2026-12-31');
  assert.equal(data.peopleRecords[1].validities[0].roleOutcome,'DA_VERIFICARE');
 });
+
+
+test('Specialista, amministrativo e CT certificano la propria competenza senza approvazione CUM',()=>{
+ for(const role of ['specialist','administrative','chief']){
+  const data=fixture(),u=user(role,'U-CERT',role==='chief'?'CT1':'OP1');
+  data.competencies=[];
+  const record={id:'C-CERT-'+role,personId:'OP1',personName:'Test',nucleus:'Arona',date:'2026-11-18',status:'updated',allowances:{call:true},callTime:'08:30',callStart:'09:00',callEnd:'10:00',createdBy:u.name};
+  const out=applyPatch(data,{competencies:[record]},u);
+  const saved=out.competencies.find(r=>r.id===record.id);
+  assert.equal(saved.status,'approved');
+  assert.ok(saved.approvedAt);
+  assert.equal(saved.certifiedByRole,role);
+  assert.ok(saved.approvedBy);
+ }
+});
+test('CT assegna supporto esterno soltanto con referente concordato nelle note',()=>{
+ const data=fixture(),u=user('chief','T2','CT1'),own=data.activities[0],other=data.activities[1];
+ assert.throws(()=>applyPatch(data,{activities:[{...own,people:['OP1','OP3']},other]},u),/Supporto concordato/);
+ const changed={...own,people:['OP1','OP3'],notes:'Supporto concordato con referente del nucleo Gallarate'};
+ const out=applyPatch(data,{activities:[changed,other]},u);
+ assert.ok(out.activities.find(a=>a.id===own.id).people.includes('OP3'));
+ assert.equal(out.activities.find(a=>a.id===other.id).title,other.title);
+});
