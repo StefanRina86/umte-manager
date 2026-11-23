@@ -146,7 +146,18 @@ async function open(){
  const closingBody=html.toLowerCase().lastIndexOf('</body>');
  if(closingBody<0)throw Error('Chiusura HTML applicazione mancante');
  html=html.slice(0,closingBody)+'<script src="guida-rapida.js?v=privacy-20261117" defer></script><script src="ted-document-archive.js?v=20261116" defer></script><script src="operational-ui-fixes.js?v=20261117" defer></script>'+html.slice(closingBody);
- document.open();document.write(html);document.close();
+ const unsafeLogin="el('loginButton').addEventListener('click',()=>{\\n    try{login(el('loginProfile').value);}catch(error){console.error(error);el('loginScreen').hidden=true;el('userName').textContent=(profiles[el('loginProfile').value]||profiles.viewer).name;el('userRole').textContent='Accesso di emergenza · ricaricare se alcune funzioni non rispondono';}\\n  });";
+ const safeLogin="el('loginButton').addEventListener('click',()=>{location.reload();});";
+ // Un avvio fallito non deve permettere di entrare con un profilo simulato.
+ if(!html.includes(unsafeLogin))throw Error('Compatibilità login: vecchio accesso simulato non riconosciuto');
+ html=html.replace(unsafeLogin,safeLogin);
+ const oldUser="permissions:window.UMTE_SHARED.user.permissions}:profiles[profileKey]||profiles.viewer";
+ if(!html.includes(oldUser))throw Error('Compatibilità login: identità personale non trovata');
+ html=html.replace(oldUser,"permissions:window.UMTE_SHARED.user.permissions,personId:window.UMTE_SHARED.user.personId}:profiles[profileKey]||profiles.viewer");
+ const partial="el('loginScreen').hidden=false;el('userRole').textContent='Avvio parziale · premere F5';";
+ if(!html.includes(partial))throw Error('Compatibilità login: gestione errore non trovata');
+ html=html.replace(partial,"el('loginScreen').hidden=false;el('userRole').textContent='Errore di avvio · riprova';const p=el('loginScreen').querySelector('p');if(p)p.textContent='Accesso verificato. Errore durante il caricamento: aggiorna la pagina per riprovare. Nessun profilo simulato attivato.';el('loginProfile').hidden=true;el('loginButton').textContent='Ricarica il gestionale';");
+  document.open();document.write(html);document.close();
 }
 form.onsubmit=async e=>{e.preventDefault();const button=document.getElementById('enter');button.disabled=true;status.dataset.error='false';status.textContent='Accesso in corso…';let authenticated=false;try{const {error}=await cloud.auth.signInWithPassword({email:document.getElementById('email').value.trim(),password:document.getElementById('password').value});if(error)throw Error('Email o password non valide.');authenticated=true;document.getElementById('password').value='';await open();}catch(e){report(e,authenticated);}finally{button.disabled=false;}};
 try{const {data}=await cloud.auth.getSession();if(data.session)await open();else status.textContent='Inserisci email e password per accedere.';}catch(e){report(e);}
