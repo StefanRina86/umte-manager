@@ -122,8 +122,8 @@ export function visibleState(data,user){
   d.medicalAppointments=(d.medicalAppointments||[]).filter(a=>sid(a.personId)===sid(user.person_id));
   d.activities=role==='chief'?(d.activities||[]):(d.activities||[]).filter(a=>ownActivityIds.has(sid(a.id)));
   d.activityDiary=(d.activityDiary||[]).filter(r=>ownActivityIds.has(sid(r.activityId))||sid(r.createdByUserId)===sid(user.user_id));
-  d.competencies=(d.competencies||[]).filter(r=>memberIds.has(sid(r.personId)));
-  d.variations=(d.variations||[]).filter(r=>memberIds.has(sid(r.personId)));
+  d.competencies=role==='chief'?(d.competencies||[]):(d.competencies||[]).filter(r=>memberIds.has(sid(r.personId)));
+  d.variations=role==='chief'?(d.variations||[]):(d.variations||[]).filter(r=>memberIds.has(sid(r.personId)));
   d.peopleRecords=(d.peopleRecords||[]).filter(p=>role==='chief'||memberIds.has(sid(p.id))).map(p=>{const {id,name,surname,displayName,nucleus,team,qualification,rotation,active,validities,skills}=p;return{id,name,surname,displayName,nucleus,team,qualification,rotation,active,...(role==='chief'&&memberIds.has(sid(p.id))?{validities,skills}:{})};});
   d.trainingEvents=(d.trainingEvents||[]).filter(e=>(e.personIds||[]).some(id=>sid(id)===sid(user.person_id))).map(e=>({...e,personIds:[user.person_id]}));d.trainingCompletions=[];d.courseCatalogOverrides=[];d.safetyRecords=[];d.auditLog=[];d.presenceImportHistory=[];
   d.shiftRules=[];d.theoreticalRules=[];d.rotationJumps=[];d.manualLocations=[];
@@ -222,14 +222,15 @@ export function applyPatch(data,patch,user){const next=structuredClone(data),per
   const byKey=v=>sid(v.personId)+'|'+String(v.date||''),submitted=new Map();
   for(const row of value){
    const k=byKey(row),previous=original.find(v=>byKey(v)===k);
-   if(submitted.has(k)||!ids.has(sid(row.personId))||!/^\d{4}-\d{2}-\d{2}$/.test(String(row.date||''))||!String(row.shift||'').trim())throw Error('Turno non valido o fuori dalla giurisdizione del proprio nucleo');
+   if(submitted.has(k)||!/^\d{4}-\d{2}-\d{2}$/.test(String(row.date||''))||!String(row.shift||'').trim())throw Error('Turno non valido o fuori dalla giurisdizione del proprio nucleo');
+   if(!ids.has(sid(row.personId))){if(!previous||!same(previous,row))throw Error('Turno di altro nucleo in sola lettura');submitted.set(k,row);continue;}
    if(previous?.sourceEventId||previous?.sourceLeaveId){
     if(!same(previous,row))throw Error('Turno collegato a corso, visita o congedo: intervenire dalla sezione dedicata');
    }
    submitted.set(k,row);
   }
-  for(const old of original.filter(v=>ids.has(sid(v.personId))))if(!submitted.has(byKey(old))&&(old.sourceEventId||old.sourceLeaveId))throw Error('Turno collegato a evento non eliminabile');
-  next.variations=[...original.filter(v=>!ids.has(sid(v.personId))),...value];continue;
+  for(const old of original){if(!submitted.has(byKey(old))&&(!ids.has(sid(old.personId))||old.sourceEventId||old.sourceLeaveId))throw Error('Eliminazione di turno non consentita');}
+  next.variations=value;continue;
  }
  if(user.role==='chief'&&key==='competencies'){
   const memberIds=teamMembers(data,user),original=data[key]||[],visible=visibleState(data,user)[key]||[];
