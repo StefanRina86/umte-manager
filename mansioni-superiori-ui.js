@@ -50,13 +50,18 @@
   const details={replacementCid:String(b.id),replacementName:b.displayName,replacementNucleus:b.nucleus,replacementRole:absentRole.value.trim(),actingRole:actingRole.value.trim(),motive:motive.value,reference:reference.value.trim()};
   const description='Mansioni superiori: '+details.actingRole+' in sostituzione di '+details.replacementName+' ('+details.motive+')';
   if(old){
+   const field=old.manualOverride?'manualOverride':'manualContribution';
+   old[field]={...(old[field]||{}),
+    allowances:{...(old[field]?.allowances||old.allowances||{}),superior:true},
+    superiorDetails:description,notes:[old[field]?.notes,description].filter(Boolean).join(' · '),
+    sourceLabel:'Mansione superiore'};
    old.allowances={...(old.allowances||{}),superior:true};
    old.superiorReplacement=details;old.superiorDetails=description;old.status='updated';old.updatedAt=at;old.updatedBy=who;
    delete old.approvedAt;delete old.approvedBy;
   }else{
    state.competencies=state.competencies||[];state.competencies.push({
     id:'MS-'+a.id+'-'+d,personId:a.id,personName:a.displayName,nucleus:a.nucleus,date:d,
-    allowances:{superior:true},superiorReplacement:details,superiorDetails:description,status:'updated',
+    allowances:{superior:true},manualContribution:{allowances:{superior:true},superiorDetails:description,notes:description},superiorReplacement:details,superiorDetails:description,status:'updated',
     source:'Mansione superiore giornaliera',createdAt:at,createdBy:who,updatedAt:at,updatedBy:who
    });
   }
