@@ -148,6 +148,7 @@ export function visibleBaseline(baseline,data,user){
  return out;
 }
 export function applyPatch(data,patch,user){const next=structuredClone(data),perms=permissions[user.role]||[];for(const [key,value] of Object.entries(patch)){if(key==='auditLog')continue;
+ if(key==='peopleRecords'&&(!Array.isArray(value)||value.some(p=>!p||typeof p!=='object'||Array.isArray(p)||!p.id)||new Set(value.map(p=>String(p.id))).size!==value.length))throw Error('Anagrafica personale non valida: nessuna scheda vuota o CID duplicato consentito');
  if(key==='leaveRequests'){
  const existing=data.leaveRequests||[],visible=managerRoles.includes(user.role)?existing:existing.filter(r=>sid(r.personId)===sid(user.person_id));
  if(!perms.includes('variation')&&!perms.includes('diaryEdit'))throw Error('Richiesta ferie non autorizzata');
