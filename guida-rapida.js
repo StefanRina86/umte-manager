@@ -25,7 +25,16 @@ function init(){
  const warning=document.createElement('p');warning.className='umte-guide-hint';warning.textContent='Se leggi “Conflitto di salvataggio” non sovrascrivere i colleghi: esporta la copia proposta, aggiorna la pagina e contatta il responsabile.';box.append(warning);
  const show=(v)=>{box.hidden=!v;open.setAttribute('aria-expanded',String(v));if(v)close.focus();else open.focus();};
  open.onclick=()=>show(box.hidden);close.onclick=()=>show(false);document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!box.hidden)show(false);});
- document.body.append(open,box);
+ const sidebar=document.querySelector('.sidebar-foot')||document.querySelector('.sidebar nav')||document.querySelector('.sidebar');
+ if(sidebar){
+  open.classList.add('umte-guide-in-menu');
+  open.style.cssText='position:static!important;left:auto!important;right:auto!important;bottom:auto!important;width:100%;max-width:100%;margin:8px 0 0;text-align:left;display:block;transform:none';
+  sidebar.append(open);
+  const style=document.createElement('style');
+  style.textContent='#umteGuideLaunch.umte-guide-in-menu{position:static!important;inset:auto!important;box-shadow:none!important;z-index:auto!important;min-height:38px}#umteGuidePanel{z-index:150!important}#toast.toast{right:auto!important;left:50%!important;bottom:22px!important;transform:translate(-50%,12px)!important;max-width:min(640px,92vw)!important;white-space:normal!important;line-height:1.5!important;z-index:1000!important;text-align:center}#toast.toast.show{transform:translate(-50%,0)!important}@media(max-width:760px){#toast.toast{bottom:78px!important}}';
+  document.head.append(style);
+ }else document.body.append(open);
+ document.body.append(box);
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
