@@ -19,6 +19,7 @@ on:
       - 'segnalazioni.js'
       - 'essenziale-ui.js'
       - 'cloud-runtime.js'
+      - 'personal-event-reminder.js'
       - 'energy-maintenance-ui.js'
       - 'abilitazioni.js'
       - 'interfaccia-2026.css'
@@ -43,6 +44,12 @@ jobs:
           npm --version
           npx playwright --version
           npx playwright install --dry-run chromium
+      - name: Verify personal medical appointment notice and privacy
+        if: always()
+        shell: bash
+        run: |
+          set -o pipefail
+          node --test --test-reporter=spec tests/personal-appointment-notice.test.cjs 2>&1 | tee "${RUNNER_TEMP}/umte-personal-events-test-log.txt"
       - name: Test synthetic schedules at 375, 390, 430, 768 and 1440px
         id: layout
         shell: bash
