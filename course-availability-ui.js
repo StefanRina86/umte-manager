@@ -36,7 +36,8 @@
     if(!label)continue;
     const marker=label.querySelector('.umte-course-unavailable');
     if(conflict){
-     input.disabled=true;input.checked=false;
+     if(input.checked){input.checked=false;input.dispatchEvent(new Event('change',{bubbles:true}));}
+     input.disabled=true;
      label.style.opacity='.55';label.title='Non disponibile il '+conflict.date+': '+conflict.reason;
      if(!marker){const note=document.createElement('small');note.className='umte-course-unavailable';note.style.cssText='display:block;color:#a03335;font-weight:700';note.textContent='Non disponibile · '+conflict.reason+' ('+conflict.date+')';label.append(note);}
      else marker.textContent='Non disponibile · '+conflict.reason+' ('+conflict.date+')';
