@@ -58,6 +58,43 @@ function applyDiary(){
  if(!$('diaryOvertimeReason').value.includes('RGLS'))$('diaryOvertimeReason').value=note;
  return true;
 }
+function registerVariationOvertime(){
+ const form=$('variationForm');if(!form)return;
+ form.addEventListener('submit',e=>{
+  const pid=String($('variationPerson')?.value||''),date=$('variationDate')?.value,
+    shift=String($('variationShift')?.value||'').toUpperCase();
+  if(!pid||!date||String(api.record?.(pid,date)?.planned||'').toUpperCase()!=='RGLS')return;
+  const absence=new Set(['RGLS','RISE','RGLSR','FE','C','MM','MF0','AS','ASP','CP','CS','H','PF','PS','PL','RFS']);
+  if(absence.has(shift))return;
+  const start=$('variationActualStart')?.value,end=$('variationActualEnd')?.value,calc=calculate(start,end);
+  if(!calc){e.preventDefault();e.stopImmediatePropagation();alert('Turno lavorato su RGLS: indica ingresso e uscita effettivi. Tutte le ore nette sono straordinario.');return;}
+  queueMicrotask(()=>{
+   const variation=(api.state.variations||[]).find(v=>String(v.personId)===pid&&v.date===date&&String(v.shift).toUpperCase()===shift);
+   if(!variation||variation.actualStart!==start||variation.actualEnd!==end)return;
+   const person=(api.people()||[]).find(p=>String(p.id)===pid);if(!person)return;
+   api.state.competencies=api.state.competencies||[];
+   const note='Presenza su RGLS: '+calc.label+' nette (pausa '+calc.breakMinutes+' minuti)';
+   let record=api.state.competencies.find(c=>String(c.personId)===pid&&c.date===date);
+   if(!record){
+    record={id:'RGLS-DIRECT-'+pid+'-'+date,personId:pid,personName:person.displayName,nucleus:person.nucleus,date,
+      status:'updated',allowances:{},manualContribution:null,diaryContributions:{},createdAt:new Date().toISOString(),createdBy:root.UMTE_SHARED?.user?.name||''};
+    api.state.competencies.push(record);
+   }
+   const contribution=record.manualOverride?'manualOverride':'manualContribution',before=record[contribution]||{};
+   const next={...before,allowances:{...(before.allowances||record.allowances||{}),overtime:true},
+      overtimeStart:start,overtimeEnd:end,overtimeReason:note,sourceLabel:'Presenza su riposo RGLS'};
+   record[contribution]=next;
+   record.allowances={...(record.allowances||{}),overtime:true};
+   record.overtimeStart=start;record.overtimeEnd=end;record.overtimeReason=note;
+   record.overtimeGrossMinutes=calc.grossMinutes;record.overtimeBreakMinutes=calc.breakMinutes;record.overtimeNetMinutes=calc.netMinutes;
+   record.autoRglsVariationKey=pid+'|'+date;record.status='updated';
+   delete record.approvedAt;delete record.approvedBy;
+   record.updatedAt=new Date().toISOString();record.updatedBy=root.UMTE_SHARED?.user?.name||'';
+   api.persist();api.renderAll?.();
+  });
+ },true);
+}
+registerVariationOvertime();
 document.addEventListener('submit',e=>{
  if(e.target?.id==='competenceForm'&&!applyCompetence()){e.preventDefault();e.stopImmediatePropagation();}
  if(e.target?.id==='diaryForm'&&!applyDiary()){e.preventDefault();e.stopImmediatePropagation();}
