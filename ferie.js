@@ -141,7 +141,8 @@
   window.UMTE_LEAVE_GUARD=(personId,date,selected)=>{
     const v=s.variations.find(x=>String(x.personId)===String(personId)&&x.date===date);
     if(v?.sourceLeaveId&&s.leaveRequests.some(r=>r.id===v.sourceLeaveId&&r.status==='approved')){api.toast('Questa giornata appartiene a ferie confermate: usa la revoca nel piano ferie prima di variarla');return false;}
-    if(selected==='C'&&v?.shift!=='C'){api.toast('Inserisci la richiesta in Ferie: la C viene applicata dopo la conferma');panel.open=true;return false;}return true;
+    // C è una variazione del turno effettivo come gli altri giustificativi: nessuna richiesta ferie obbligatoria.
+    return true;
   };
   render();
 })();
