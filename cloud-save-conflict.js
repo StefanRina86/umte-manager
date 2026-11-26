@@ -4,6 +4,16 @@
 (function(root){
 'use strict';
 const same=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
+// Per le variazioni, audit e timestamp non rappresentano modifiche operative.
+// La convergenza è ammessa SOLO se turno, orari, riferimento e provenienza coincidono.
+// Non sovrascrivere mai un turno o una causale realmente diversi.
+const equivalent=(key,a,b)=>{
+ if(same(a,b))return true;
+ if(key!=='variations'||!a||!b||typeof a!=='object'||typeof b!=='object')return false;
+ const norm=x=>String(x??'').normalize('NFKC').trim().replace(/\s+/g,' ').toLocaleLowerCase('it');
+ const fields=['personId','date','shift','actualStart','actualEnd','reason','sourceEventId','sourceLeaveId'];
+ return fields.every(f=>norm(a[f])===norm(b[f]));
+};
 const clone=value=>value===undefined?undefined:JSON.parse(JSON.stringify(value));
 const mergeable=new Set(['activityDiary','operationalRequests','leaveRequests','activities','competencies','variations']);
 const idOf=(item,key)=>{
@@ -33,14 +43,14 @@ function threeWayRows(key,base,ours,theirs){
  if(!b||!o||!t)return {safe:false,reason:'Identificativi mancanti, duplicati o elenco non valido'};
  const changed=new Set([...b.keys(),...o.keys()].filter(id=>!same(b.get(id),o.get(id))));
  for(const id of changed){
-  if(!same(b.get(id),t.get(id))&&!same(o.get(id),t.get(id)))
+  if(!same(b.get(id),t.get(id))&&!equivalent(key,o.get(id),t.get(id)))
    return {safe:false,reason:'Il record '+id+' è stato modificato anche da un altro utente'};
  }
  const result=[];
  for(const row of theirs){
   const id=idOf(row,key);
   if(!changed.has(id))result.push(clone(row));
-  else if(o.has(id))result.push(clone(o.get(id)));
+  else if(o.has(id))result.push(clone(equivalent(key,o.get(id),t.get(id))?t.get(id):o.get(id)));
  }
  for(const row of ours){
   const id=idOf(row,key);
