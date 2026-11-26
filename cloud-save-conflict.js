@@ -12,7 +12,7 @@ const idOf=(item,key)=>{
  // precedono l'introduzione degli ID. La chiave naturale è stabile tra revisioni.
  if(key==='variations'){
    const person=String(item.personId||'').trim(),date=String(item.date||'').trim();
-   return person&&/^\\d{4}-\\d{2}-\\d{2}$/.test(date)?person+'|'+date:null;
+   return person&&/^\d{4}-\d{2}-\d{2}$/.test(date)?person+'|'+date:null;
  }
  if(typeof item.id!=='string'&&typeof item.id!=='number')return null;
  const id=String(item.id);
