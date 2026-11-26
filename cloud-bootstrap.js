@@ -159,9 +159,9 @@ async function open(){
  if(!html.includes(legacyShiftSave))throw Error("La gestione variazioni è cambiata: correzione non applicabile in sicurezza.");
  html=html.replace(legacyShiftSave,fixedShiftSave);
  // Congedo C e altri giustificativi si registrano esclusivamente in Nuova variazione.
- // Disattiva il vecchio flusso di richieste/conferme senza cancellare alcun dato storico.
- if(!html.includes('<script src="ferie.js"></script>'))throw Error('Modulo ferie originale non trovato');
- html=html.replace('<script src="ferie.js"></script>','');
+ // Le campagne restano operative per le richieste future; la C ordinaria resta una variazione diretta.
+ if(!html.includes('<script src="ferie.js"></script>'))throw Error('Modulo campagne ferie originale non trovato');
+ html=html.replace('<script src="ferie.js"></script>','<script src="ferie.js?v=campagne-future-20261126"></script>');
  html=html.replace('>Salva comunque</button></div>\\n    </form>\\n  </dialog>\\n\\n  <dialog id="competenceDialog"','>Salva variazione</button></div>\\n    </form>\\n  </dialog>\\n\\n  <dialog id="competenceDialog"');
  // Una competenza importata può non contenere deadline: evitare Invalid time value.
  const oldCompetenceDeadline="const deadline=parseDate(c.deadline),late=now>deadline";
