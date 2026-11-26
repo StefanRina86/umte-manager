@@ -172,6 +172,11 @@ async function open(){
  const safeCompetenceFormat="\u0024{deadline&&!Number.isNaN(deadline.getTime())?fmtDate.format(deadline):'—'}\u0024{late?";
  if(!html.includes(oldCompetenceFormat))throw Error('Scadenza competenze non trovata nel rendering');
  html=html.replace(oldCompetenceFormat,safeCompetenceFormat);
+ // I dati 2027-2028 sono nel baseline condiviso, ma il mese era ancora limitato al 2026.
+ const oldMonthlyPicker='<input id="monthPicker" type="month" min="2026-01" max="2026-12" value="2026-09">';
+ const newMonthlyPicker='<input id="monthPicker" type="month" min="2026-01" max="2028-12" value="2026-09">';
+ if(!html.includes(oldMonthlyPicker))throw Error('Selettore mensile originale non trovato');
+ html=html.replace(oldMonthlyPicker,newMonthlyPicker);
  const accountingReady="const template=window.UMTE_TEMPLATES?.[type];";
  if(!html.includes(accountingReady))throw Error('Generatore RP/straordinari non disponibile');
  html=html.replace(accountingReady,"await (window.UMTE_MODEL_READY||Promise.resolve());const template=window.UMTE_TEMPLATES?.[type];");
