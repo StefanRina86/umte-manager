@@ -162,6 +162,15 @@ async function open(){
  if(!html.includes('<script src="ferie.js"></script>'))throw Error('Modulo ferie originale non trovato');
  html=html.replace('<script src="ferie.js"></script>','<script src="ferie.js?v=direct-leave-20261126"></script>');
  html=html.replace('>Salva comunque</button></div>\\n    </form>\\n  </dialog>\\n\\n  <dialog id="competenceDialog"','>Salva variazione</button></div>\\n    </form>\\n  </dialog>\\n\\n  <dialog id="competenceDialog"');
+ // Una competenza importata può non contenere deadline: evitare Invalid time value.
+ const oldCompetenceDeadline="const deadline=parseDate(c.deadline),late=now>deadline";
+ const safeCompetenceDeadline="const deadline=/^\\d{4}-\\d{2}-\\d{2}$/.test(String(c.deadline||''))?parseDate(c.deadline):(/^\\d{4}-\\d{2}-\\d{2}$/.test(String(c.date||''))?weekDeadline(c.date):null),late=deadline instanceof Date&&!Number.isNaN(deadline.getTime())&&now>deadline";
+ if(!html.includes(oldCompetenceDeadline))throw Error('Impossibile trovare la formattazione originale delle scadenze competenze');
+ html=html.replace(oldCompetenceDeadline,safeCompetenceDeadline);
+ const oldCompetenceFormat="\u0024{fmtDate.format(deadline)}\u0024{late?";
+ const safeCompetenceFormat="\u0024{deadline&&!Number.isNaN(deadline.getTime())?fmtDate.format(deadline):'—'}\u0024{late?";
+ if(!html.includes(oldCompetenceFormat))throw Error('Scadenza competenze non trovata nel rendering');
+ html=html.replace(oldCompetenceFormat,safeCompetenceFormat);
  const accountingReady="const template=window.UMTE_TEMPLATES?.[type];";
  if(!html.includes(accountingReady))throw Error('Generatore RP/straordinari non disponibile');
  html=html.replace(accountingReady,"await (window.UMTE_MODEL_READY||Promise.resolve());const template=window.UMTE_TEMPLATES?.[type];");
