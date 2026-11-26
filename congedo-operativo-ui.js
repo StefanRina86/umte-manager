@@ -39,7 +39,7 @@ form.addEventListener('submit',e=>{
  const existing=(state.variations||[]).find(x=>String(x.personId)===String(p.id)&&x.date===d);
  if(existing?.sourceEventId||existing?.sourceLeaveId){note.textContent='La giornata è gestita da un evento o da una richiesta ferie: usa la relativa scheda.';return;}
  if(!window.confirm('Confermi la registrazione di C per '+p.displayName+' il '+d+'?'))return;
- const at=new Date().toISOString(),record={...existing,personId:p.id,personName:p.displayName,date:d,shift:'C',reason:ref,detail:'Congedo autorizzato · '+ref,level:'green',createdAt:existing?.createdAt||at,createdBy:existing?.createdBy||shared.user.name,updatedAt:at,updatedBy:shared.user.name};
+ const at=new Date().toISOString(),record={...existing,id:existing?.id||'VAR-'+p.id+'-'+d,personId:p.id,personName:p.displayName,date:d,shift:'C',reason:ref,detail:'Congedo autorizzato · '+ref,level:'green',createdAt:existing?.createdAt||at,createdBy:existing?.createdBy||shared.user.name,updatedAt:at,updatedBy:shared.user.name};
  state.variations=(state.variations||[]).filter(x=>!(String(x.personId)===String(p.id)&&x.date===d));
  state.variations.push(record);
  api.persist();api.renderAll?.();
