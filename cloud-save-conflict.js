@@ -6,23 +6,30 @@
 const same=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
 const clone=value=>value===undefined?undefined:JSON.parse(JSON.stringify(value));
 const mergeable=new Set(['activityDiary','operationalRequests','leaveRequests','activities','competencies','variations']);
-const idOf=item=>{
- if(!item||typeof item!=='object'||Array.isArray(item)||typeof item.id!=='string'&&typeof item.id!=='number')return null;
+const idOf=(item,key)=>{
+ if(!item||typeof item!=='object'||Array.isArray(item))return null;
+ // La variazione del turno è univoca per persona + data: i record storici
+ // precedono l'introduzione degli ID. La chiave naturale è stabile tra revisioni.
+ if(key==='variations'){
+   const person=String(item.personId||'').trim(),date=String(item.date||'').trim();
+   return person&&/^\\d{4}-\\d{2}-\\d{2}$/.test(date)?person+'|'+date:null;
+ }
+ if(typeof item.id!=='string'&&typeof item.id!=='number')return null;
  const id=String(item.id);
  return id.length&&id.length<=256?id:null;
 };
-function indexed(rows){
+function indexed(rows,key){
  if(!Array.isArray(rows))return null;
  const map=new Map();
  for(const row of rows){
-  const id=idOf(row);
+  const id=idOf(row,key);
   if(!id||map.has(id))return null;
   map.set(id,row);
  }
  return map;
 }
 function threeWayRows(key,base,ours,theirs){
- const b=indexed(base),o=indexed(ours),t=indexed(theirs);
+ const b=indexed(base,key),o=indexed(ours,key),t=indexed(theirs,key);
  if(!b||!o||!t)return {safe:false,reason:'Identificativi mancanti, duplicati o elenco non valido'};
  const changed=new Set([...b.keys(),...o.keys()].filter(id=>!same(b.get(id),o.get(id))));
  for(const id of changed){
@@ -31,12 +38,12 @@ function threeWayRows(key,base,ours,theirs){
  }
  const result=[];
  for(const row of theirs){
-  const id=idOf(row);
+  const id=idOf(row,key);
   if(!changed.has(id))result.push(clone(row));
   else if(o.has(id))result.push(clone(o.get(id)));
  }
  for(const row of ours){
-  const id=idOf(row);
+  const id=idOf(row,key);
   if(changed.has(id)&&o.has(id)&&!t.has(id))result.push(clone(row));
  }
  return {safe:true,value:result,changedRecords:changed.size};
