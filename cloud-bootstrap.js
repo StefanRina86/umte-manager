@@ -177,6 +177,16 @@ async function open(){
  const newMonthlyPicker='<input id="monthPicker" type="month" min="2026-01" max="2028-12" value="2026-09">';
  if(!html.includes(oldMonthlyPicker))throw Error('Selettore mensile originale non trovato');
  html=html.replace(oldMonthlyPicker,newMonthlyPicker);
+ // Non cancellare i congedi confermati né le registrazioni importate alla prima apertura.
+ const redundantGuardOld="if(variation.sourceEventId||variation.sourceLeaveId||variation.actualStart||variation.actualEnd)return true;";
+ const redundantGuardNew="if(variation.sourceEventId||variation.sourceLeaveId||variation.actualStart||variation.actualEnd||normalizedShiftCode(variation.shift)==='C'||variation.source)return true;";
+ if(!html.includes(redundantGuardOld))throw Error('Pulizia automatica variazioni non trovata');
+ html=html.replace(redundantGuardOld,redundantGuardNew);
+ // Le richieste di ferie Natale 2026/27 sono state sostituite da C effettivi confermati.
+ const legacyChristmasBadge="r.status==='submitted'&&String(r.personId)===String(personId)&&r.from<=date&&r.to>=date";
+ const futureOnlyBadge="date>'2027-01-10'&&r.status==='submitted'&&String(r.personId)===String(personId)&&r.from<=date&&r.to>=date";
+ if(!html.includes(legacyChristmasBadge))throw Error('Indicatore F? non trovato');
+ html=html.replace(legacyChristmasBadge,futureOnlyBadge);
  const accountingReady="const template=window.UMTE_TEMPLATES?.[type];";
  if(!html.includes(accountingReady))throw Error('Generatore RP/straordinari non disponibile');
  html=html.replace(accountingReady,"await (window.UMTE_MODEL_READY||Promise.resolve());const template=window.UMTE_TEMPLATES?.[type];");
