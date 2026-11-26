@@ -66,7 +66,7 @@ function markHeaders(){
 function create(tag,txt){const el=document.createElement(tag);if(txt!==undefined)el.textContent=txt;return el;}
 let root,dateControl,nucleusControl,peopleBox,message,go,chosen=new Set(),presentMonth='';
 function redrawPeople(){
- const people=activePeople().filter(p=>!nucleusControl.value||p.nucleus===nucleusControl.value);
+ const people=activePeople().filter(p=>(!nucleusControl.value||p.nucleus===nucleusControl.value)&&api()?.record?.(p.id,dateControl.value));
  peopleBox.replaceChildren();
  const date=dateControl.value;const current=api()?.state?.variations||[];
  for(const p of people){
@@ -95,7 +95,7 @@ function apply(){
  const apiObj=api();if(!canManage()||!apiObj?.state||!chosen.size)return;
  if(document.body.dataset.sharedSaveFailed==='1'||document.body.dataset.sharedSaveNeedsReload==='1'){message.textContent='Aggiorna i dati prima di un nuovo salvataggio';return;}
  const date=dateControl.value,title=dates.get(date);if(!title)return;
- const ids=new Set(chosen),people=activePeople().filter(p=>ids.has(String(p.id)));
+ const ids=new Set(chosen),people=activePeople().filter(p=>ids.has(String(p.id))&&apiObj.record?.(p.id,date));
  const current=apiObj.state.variations||[];
  const changed=people.filter(p=>current.find(v=>String(v.personId)===String(p.id)&&v.date===date)?.shift!=='FE');
  const prior=changed.filter(p=>current.some(v=>String(v.personId)===String(p.id)&&v.date===date));
@@ -126,7 +126,7 @@ function init(){
  nucleusControl.append(new Option('Tutti i nuclei',''));
  for(const n of [...new Set(activePeople().map(p=>p.nucleus).filter(Boolean))].sort())nucleusControl.append(new Option(n,n));
  nucleusLabel.append(nucleusControl);controls.append(nucleusLabel);
- const all=create('button','Seleziona tutti');all.type='button';all.onclick=()=>{for(const p of activePeople().filter(p=>!nucleusControl.value||p.nucleus===nucleusControl.value))chosen.add(String(p.id));redrawPeople();};
+ const all=create('button','Seleziona tutti');all.type='button';all.onclick=()=>{for(const p of activePeople().filter(p=>(!nucleusControl.value||p.nucleus===nucleusControl.value)&&api()?.record?.(p.id,dateControl.value)))chosen.add(String(p.id));redrawPeople();};
  const none=create('button','Deseleziona');none.type='button';none.onclick=()=>{chosen.clear();redrawPeople();};
  controls.append(all,none);root.append(controls);
  peopleBox=create('div');peopleBox.className='umte-holiday-people';root.append(peopleBox);
