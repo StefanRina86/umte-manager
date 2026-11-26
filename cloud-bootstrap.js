@@ -158,6 +158,10 @@ async function open(){
  const fixedShiftSave="if(selected!==normalizedShiftCode(base?.actual||planned)){state.variations.push({personId:person.id,personName:person.displayName,date,shift:selected,actualStart:el('variationActualStart').value,actualEnd:el('variationActualEnd').value,reason:el('variationReason').value.trim(),level:evaluation.level,detail:evaluation.detail,createdAt:new Date().toISOString(),createdBy:currentUser.name});persist();closeModals();renderAll();toast('Turno effettivo salvato: '+selected+' · verifica il salvataggio online');}else{persist();closeModals();renderAll();toast('Turno ripristinato al valore effettivo del file: '+(base?.actual||planned));}";
  if(!html.includes(legacyShiftSave))throw Error("La gestione variazioni è cambiata: correzione non applicabile in sicurezza.");
  html=html.replace(legacyShiftSave,fixedShiftSave);
+ // Usa la registrazione standard anche per C e aggiorna il modulo ferie senza cache obsoleta.
+ if(!html.includes('<script src="ferie.js"></script>'))throw Error('Modulo ferie originale non trovato');
+ html=html.replace('<script src="ferie.js"></script>','<script src="ferie.js?v=direct-leave-20261126"></script>');
+ html=html.replace('>Salva comunque</button></div>\\n    </form>\\n  </dialog>\\n\\n  <dialog id="competenceDialog"','>Salva variazione</button></div>\\n    </form>\\n  </dialog>\\n\\n  <dialog id="competenceDialog"');
  const accountingReady="const template=window.UMTE_TEMPLATES?.[type];";
  if(!html.includes(accountingReady))throw Error('Generatore RP/straordinari non disponibile');
  html=html.replace(accountingReady,"await (window.UMTE_MODEL_READY||Promise.resolve());const template=window.UMTE_TEMPLATES?.[type];");
