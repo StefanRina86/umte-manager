@@ -17,8 +17,8 @@
     @media(max-width:650px){.leave-grid{grid-template-columns:1fr}.leave-dialog{padding:16px}.leave-tools{align-items:stretch}.leave-tools label{width:100%}}
   `;document.head.append(style);
   const panel=document.createElement('details');panel.id='leavePanel';panel.className='leave-panel';
-  panel.innerHTML=`<summary>Ferie · richieste e conferme</summary>
-    <p class="leave-help">Il dipendente comunica la richiesta; il CT può registrarla per il nucleo. La richiesta non cambia il turno. Responsabile e specialisti verificano e confermano: solo allora vengono applicate le C e gli eventuali cambi concordati di reperibilità.</p>
+  panel.innerHTML=`<summary>Campagne ferie · richieste e conferme future</summary>
+    <p class="leave-help">Per le nuove campagne dal 2027 puoi raccogliere e confermare le richieste. I congedi già inseriti in Turni e presenze, compresi quelli natalizi 2026/2027, non richiedono qui una seconda conferma.</p>
     <div class="leave-tools"><label>Campagna ferie<select id="leaveCampaignFilter"></select></label><label>Stato richiesta<select id="leaveStatusFilter"><option value="">Tutti</option>${Object.entries(status).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select></label><button id="leaveNew" class="button primary" type="button">Nuova richiesta ferie</button><button id="leaveCampaignNew" class="button secondary" type="button">Nuova campagna</button><button id="leaveCampaignEdit" class="button secondary" type="button">Scadenze campagna</button></div>
     <div id="leaveCampaignInfo" class="leave-help"></div>
     <details class="leave-rules"><summary>Regole ferie e tempi concordati</summary><ul>
@@ -51,7 +51,7 @@
   const val=id=>$(id).value.trim(),personName=id=>api.people().find(p=>String(p.id)===String(id))?.displayName||String(id);
   function context(r){return{people:api.people(),campaign:campaigns().find(c=>c.id===r.campaignId),requests:s.leaveRequests,today:today(),record:api.record,evaluate:api.evaluate};}
   function model(){return{id:currentId,campaignId:val('leaveCampaign'),personId:val('leavePerson'),requestedOn:val('leaveReceived'),from:val('leaveFrom'),to:val('leaveTo'),channel:val('leaveChannel'),notes:val('leaveNotes'),exceptionReason:val('leaveException'),mainSummer:$('leaveSummer').checked,swapAgreed:$('leaveAgreed').checked,coverageVerified:$('leaveCoverage').checked,replacements:{...draftReplacements}};}
-  function campaignOptions(selected){return campaigns().map(c=>`<option value="${esc(c.id)}" ${c.id===selected?'selected':''}>${esc(c.name)}</option>`).join('');}
+  function campaignOptions(selected){return campaigns().filter(c=>!c.to||c.to>='2027-01-11').map(c=>`<option value="${esc(c.id)}" ${c.id===selected?'selected':''}>${esc(c.name)}</option>`).join('');}
   function render(){
     const filter=$('leaveCampaignFilter'),previous=filter.value;filter.innerHTML='<option value="">Tutte le campagne</option>'+campaignOptions(previous);filter.value=previous;
     const c=campaigns().find(x=>x.id===filter.value),list=s.leaveRequests.filter(r=>(!filter.value||r.campaignId===filter.value)&&(!val('leaveStatusFilter')||r.status===val('leaveStatusFilter'))).sort((a,b)=>b.createdAt.localeCompare(a.createdAt));
